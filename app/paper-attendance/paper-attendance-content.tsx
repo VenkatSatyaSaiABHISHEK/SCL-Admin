@@ -94,15 +94,34 @@ export default function PaperAttendanceContent() {
           
           console.log('📋 Raw data:', jsonData);
 
-          // Parse students from Excel
-          const parsedStudents = jsonData.map((row, idx) => ({
-            id: `student-${idx}`,
-            rollNo: String(row['Roll No'] || row['rollNo'] || row['R No'] || '').trim(),
-            name: String(row['Student Name'] || row['name'] || row['Name'] || '').trim(),
-            branch: String(row['Branch'] || row['branch'] || '').trim(),
-            year: String(row['Year'] || row['year'] || '').trim(),
-            section: String(row['Section'] || row['section'] || '').trim(),
-          })).filter(s => s.rollNo && s.name);
+          // Parse students from Excel - handle case-insensitive column names
+          const parsedStudents = jsonData.map((row, idx) => {
+            // Get column values - case insensitive
+            const rollNo = Object.keys(row).find(k => k.toLowerCase().includes('roll'))
+              ? row[Object.keys(row).find(k => k.toLowerCase().includes('roll'))!]
+              : '';
+            const name = Object.keys(row).find(k => k.toLowerCase().includes('name'))
+              ? row[Object.keys(row).find(k => k.toLowerCase().includes('name'))!]
+              : '';
+            const branch = Object.keys(row).find(k => k.toLowerCase().includes('branch'))
+              ? row[Object.keys(row).find(k => k.toLowerCase().includes('branch'))!]
+              : '';
+            const year = Object.keys(row).find(k => k.toLowerCase().includes('year'))
+              ? row[Object.keys(row).find(k => k.toLowerCase().includes('year'))!]
+              : '';
+            const section = Object.keys(row).find(k => k.toLowerCase().includes('section'))
+              ? row[Object.keys(row).find(k => k.toLowerCase().includes('section'))!]
+              : '';
+
+            return {
+              id: `student-${idx}`,
+              rollNo: String(rollNo || '').trim(),
+              name: String(name || '').trim(),
+              branch: String(branch || '').trim(),
+              year: String(year || '').trim(),
+              section: String(section || '').trim(),
+            };
+          }).filter(s => s.rollNo && s.name);
 
           console.log('✨ Parsed students:', parsedStudents);
 
