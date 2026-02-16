@@ -54,6 +54,11 @@ export default function PublicSyllabusView({
   const [viewMode, setViewMode] = useState<'card' | 'timeline'>('card');
   const [selectedItem, setSelectedItem] = useState<SyllabusRow | null>(null);
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = (imageUrl: string) => {
+    setFailedImages((prev) => new Set([...prev, imageUrl]));
+  };
 
   const handleExportPDF = () => {
     window.print();
@@ -223,6 +228,8 @@ export default function PublicSyllabusView({
                       <div className="flex -space-x-2">
                         {visibleMentors.map((mentorId) => {
                           const mentor = mentors.find((m) => m.id === mentorId);
+                          const imageUrl = mentor?.avatar || mentor?.photoURL || mentor?.photoUrl;
+                          const imageFailed = imageUrl && failedImages.has(imageUrl);
                           return (
                             <button
                               key={mentorId}
@@ -233,11 +240,12 @@ export default function PublicSyllabusView({
                               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold border border-white hover:scale-110 transition overflow-hidden ${!mentor?.avatar && !mentor?.photoURL && !mentor?.photoUrl ? getMentorColor(mentorId) : ''}`}
                               title={mentor?.name}
                             >
-                              {mentor?.avatar || mentor?.photoURL || mentor?.photoUrl ? (
+                              {imageUrl && !imageFailed ? (
                                 <img 
-                                  src={mentor.avatar || mentor.photoURL || mentor.photoUrl}
+                                  src={imageUrl}
                                   alt={mentor?.name}
                                   className="w-full h-full object-cover"
+                                  onError={() => handleImageError(imageUrl)}
                                 />
                               ) : (
                                 mentor?.name?.charAt(0).toUpperCase()
@@ -314,6 +322,8 @@ export default function PublicSyllabusView({
                             <div className="flex -space-x-2">
                               {visibleMentors.map((mentorId) => {
                                 const mentor = mentors.find((m) => m.id === mentorId);
+                                const imageUrl = mentor?.avatar || mentor?.photoURL || mentor?.photoUrl;
+                                const imageFailed = imageUrl && failedImages.has(imageUrl);
                                 return (
                                   <button
                                     key={mentorId}
@@ -324,11 +334,12 @@ export default function PublicSyllabusView({
                                     className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-white text-xs font-bold border border-white hover:scale-110 transition overflow-hidden ${!mentor?.avatar && !mentor?.photoURL && !mentor?.photoUrl ? getMentorColor(mentorId) : ''}`}
                                     title={mentor?.name}
                                   >
-                                    {mentor?.avatar || mentor?.photoURL || mentor?.photoUrl ? (
+                                    {imageUrl && !imageFailed ? (
                                       <img 
-                                        src={mentor.avatar || mentor.photoURL || mentor.photoUrl}
+                                        src={imageUrl}
                                         alt={mentor?.name}
                                         className="w-full h-full object-cover"
+                                        onError={() => handleImageError(imageUrl)}
                                       />
                                     ) : (
                                       mentor?.name?.charAt(0).toUpperCase()
@@ -390,6 +401,8 @@ export default function PublicSyllabusView({
                   <div className="space-y-2">
                     {selectedItem.mentors.map((mentorId) => {
                       const mentor = mentors.find((m) => m.id === mentorId);
+                      const imageUrl = mentor?.avatar || mentor?.photoURL || mentor?.photoUrl;
+                      const imageFailed = imageUrl && failedImages.has(imageUrl);
                       return (
                         <button
                           key={mentorId}
@@ -397,11 +410,12 @@ export default function PublicSyllabusView({
                           className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-100 transition text-left"
                         >
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden ${!mentor?.avatar && !mentor?.photoURL && !mentor?.photoUrl ? getMentorColor(mentorId) : ''}`}>
-                            {mentor?.avatar || mentor?.photoURL || mentor?.photoUrl ? (
+                            {imageUrl && !imageFailed ? (
                               <img 
-                                src={mentor.avatar || mentor.photoURL || mentor.photoUrl}
+                                src={imageUrl}
                                 alt={mentor?.name}
                                 className="w-full h-full object-cover"
+                                onError={() => handleImageError(imageUrl)}
                               />
                             ) : (
                               mentor?.name?.charAt(0).toUpperCase()
@@ -464,16 +478,22 @@ export default function PublicSyllabusView({
               </div>
 
               <div className="text-center">
-                {selectedMentor.avatar || selectedMentor.photoURL || selectedMentor.photoUrl ? (
-                  <img 
-                    src={selectedMentor.avatar || selectedMentor.photoURL || selectedMentor.photoUrl}
-                    alt={selectedMentor.name}
-                    className="w-20 h-20 mx-auto rounded-full object-cover mb-4"
-                  />
-                ) : (
-                  <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4 ${getMentorColor(mentors.findIndex((m) => m.id === selectedMentor.id).toString())}`}>
-                    {selectedMentor.name?.charAt(0).toUpperCase()}
-                  </div>
+                {(() => {
+                  const imageUrl = selectedMentor.avatar || selectedMentor.photoURL || selectedMentor.photoUrl;
+                  const imageFailed = imageUrl && failedImages.has(imageUrl);
+                  return imageUrl && !imageFailed ? (
+                    <img 
+                      src={imageUrl}
+                      alt={selectedMentor.name}
+                      className="w-20 h-20 mx-auto rounded-full object-cover mb-4"
+                      onError={() => handleImageError(imageUrl)}
+                    />
+                  ) : (
+                    <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4 ${getMentorColor(mentors.findIndex((m) => m.id === selectedMentor.id).toString())}`}>
+                      {selectedMentor.name?.charAt(0).toUpperCase()}
+                    </div>
+                  );
+                })()}
                 )}
                 <h3 className="text-lg font-bold text-gray-900">{selectedMentor.name}</h3>
                 <p className="text-sm text-gray-500 mt-1">Instructor</p>

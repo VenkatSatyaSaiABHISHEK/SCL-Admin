@@ -82,8 +82,13 @@ export default function ExcelGridEditor({
   const [mentorDropdownRow, setMentorDropdownRow] = useState<string | null>(null);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const gridRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleImageError = (imageUrl: string) => {
+    setFailedImages((prev) => new Set([...prev, imageUrl]));
+  };
 
   // Sync with initialData when it changes (new data loaded from Firebase)
   useEffect(() => {
@@ -597,17 +602,20 @@ export default function ExcelGridEditor({
                                 {row.mentors.slice(0, 3).map((mentorId) => {
                                   const mentor = mentors.find((m) => m.id === mentorId);
                                   const mentorIdx = mentors.findIndex((m) => m.id === mentorId);
+                                  const imageUrl = mentor?.avatar || mentor?.photoURL || mentor?.photoUrl;
+                                  const imageFailed = imageUrl && failedImages.has(imageUrl);
                                   return (
                                     <div
                                       key={mentorId}
                                       className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold border border-white shadow-sm overflow-hidden ${!mentor?.avatar && !mentor?.photoURL && !mentor?.photoUrl ? getMentorColor(mentorIdx) : ''}`}
                                       title={mentor?.name}
                                     >
-                                      {mentor?.avatar || mentor?.photoURL || mentor?.photoUrl ? (
+                                      {imageUrl && !imageFailed ? (
                                         <img 
-                                          src={mentor.avatar || mentor.photoURL || mentor.photoUrl}
+                                          src={imageUrl}
                                           alt={mentor?.name}
                                           className="w-full h-full object-cover"
+                                          onError={() => handleImageError(imageUrl)}
                                         />
                                       ) : (
                                         mentor?.name?.charAt(0).toUpperCase()
@@ -651,13 +659,23 @@ export default function ExcelGridEditor({
                                     }`}
                                   >
                                     <span className="mr-1">{row.mentors.includes(mentor.id) ? '✓' : '○'}</span>
-                                    {(mentor.avatar || mentor.photoURL || mentor.photoUrl) && (
-                                      <img 
-                                        src={mentor.avatar || mentor.photoURL || mentor.photoUrl}
-                                        alt={mentor.name}
-                                        className="w-4 h-4 rounded-full object-cover"
-                                      />
-                                    )}
+                                    {(() => {
+                                      const imageUrl = mentor.avatar || mentor.photoURL || mentor.photoUrl;
+                                      const imageFailed = imageUrl && failedImages.has(imageUrl);
+                                      return imageUrl && !imageFailed ? (
+                                        <img 
+                                          key={`${mentor.id}-img`}
+                                          src={imageUrl}
+                                          alt={mentor.name}
+                                          className="w-4 h-4 rounded-full object-cover"
+                                          onError={() => handleImageError(imageUrl)}
+                                        />
+                                      ) : (
+                                        <span className="w-4 h-4 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">
+                                          {mentor.name?.charAt(0).toUpperCase()}
+                                        </span>
+                                      );
+                                    })()}
                                     {mentor.name}
                                   </button>
                                 ))
@@ -749,13 +767,16 @@ export default function ExcelGridEditor({
                     {detailRow.mentors.map((mentorId) => {
                       const mentor = mentors.find((m) => m.id === mentorId);
                       const mentorIdx = mentors.findIndex((m) => m.id === mentorId);
+                      const imageUrl = mentor?.avatar || mentor?.photoURL || mentor?.photoUrl;
+                      const imageFailed = imageUrl && failedImages.has(imageUrl);
                       return (
                         <div key={mentorId} className="flex items-center gap-2 p-2 rounded bg-gray-50">
-                          {mentor?.avatar || mentor?.photoURL || mentor?.photoUrl ? (
+                          {imageUrl && !imageFailed ? (
                             <img 
-                              src={mentor?.avatar || mentor?.photoURL || mentor?.photoUrl}
+                              src={imageUrl}
                               alt={mentor?.name}
                               className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                              onError={() => handleImageError(imageUrl)}
                             />
                           ) : (
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${getMentorColor(mentorIdx)}`}>
