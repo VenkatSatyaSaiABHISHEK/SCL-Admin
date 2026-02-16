@@ -1,10 +1,14 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
-import serviceAccount from '@/serviceAccountKey.json';
 
 let adminApp: ReturnType<typeof initializeApp> | null = null;
 try {
+  const serviceAccountKey = process.env.FIREBASE_ADMIN_SDK_KEY;
+  if (!serviceAccountKey) {
+    throw new Error('FIREBASE_ADMIN_SDK_KEY environment variable is not set');
+  }
+  const serviceAccount = JSON.parse(serviceAccountKey);
   adminApp = initializeApp({
     credential: cert(serviceAccount as any),
   });
