@@ -143,16 +143,13 @@ export default function SharePage() {
   if (!schedule.length) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="w-48 h-48 mx-auto mb-4">
-            <DotLottieReact
-              src="https://lottie.host/555a53bd-a908-4059-97a4-0063e54227ae/qkJlPyibmD.lottie"
-              loop
-              autoplay
-            />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Loading syllabus...</h3>
-          <p className="text-sm text-gray-500">Please wait a moment</p>
+        <div className="w-80 h-80">
+          <DotLottieReact
+            src="https://lottie.host/555a53bd-a908-4059-97a4-0063e54227ae/qkJlPyibmD.lottie"
+            loop
+            autoplay
+            style={{ width: '100%', height: '100%' }}
+          />
         </div>
       </div>
     );
