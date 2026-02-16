@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import PublicSyllabusView from '../../syllabus/public-syllabus-view';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -143,13 +144,15 @@ export default function SharePage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 rounded-2xl flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+          <div className="w-48 h-48 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/555a53bd-a908-4059-97a4-0063e54227ae/qkJlPyibmD.lottie"
+              loop
+              autoplay
+            />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Invalid share link</h3>
-          <p className="text-sm text-gray-500">The syllabus data could not be loaded</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Loading syllabus...</h3>
+          <p className="text-sm text-gray-500">Please wait a moment</p>
         </div>
       </div>
     );
