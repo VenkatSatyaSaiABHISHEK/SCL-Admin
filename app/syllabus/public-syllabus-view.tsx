@@ -494,7 +494,6 @@ export default function PublicSyllabusView({
                     </div>
                   );
                 })()}
-                )}
                 <h3 className="text-lg font-bold text-gray-900">{selectedMentor.name}</h3>
                 <p className="text-sm text-gray-500 mt-1">Instructor</p>
               </div>
