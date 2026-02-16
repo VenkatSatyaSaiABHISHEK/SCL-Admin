@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f172a;
+  --background-light: #1e293b;
+  --foreground: #f1f5f9;
+  --accent-blue: #0ea5e9;
+  --accent-blue-dark: #0284c7;
 }
 
 @theme inline {
@@ -12,15 +15,262 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark light;
+}
+
+/* Dark Mode (Default) */
+body {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  color: #f1f5f9;
+  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+/* Light Mode */
+html.light {
+  background: #f8fafc;
+}
+
+html.light body {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+  color: #1e293b;
+}
+
+/* Light mode text color overrides */
+html.light {
+  --foreground: #1e293b;
+}
+
+html.light .text-white {
+  color: #1e293b;
+}
+
+html.light .text-white\/70 {
+  color: rgba(30, 41, 59, 0.7);
+}
+
+html.light .text-white\/60 {
+  color: rgba(30, 41, 59, 0.6);
+}
+
+html.light .text-white\/50 {
+  color: rgba(30, 41, 59, 0.5);
+}
+
+html.light .text-white\/80 {
+  color: rgba(30, 41, 59, 0.8);
+}
+
+html.light .text-cyan-300 {
+  color: #0ea5e9;
+}
+
+html.light .text-cyan-200 {
+  color: #06b6d4;
+}
+
+html.light .text-blue-300 {
+  color: #0284c7;
+}
+
+/* Glassmorphism - Dark Mode */
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-effect-strong {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Glassmorphism - Light Mode */
+html.light .glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+html.light .glass-effect-strong {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+/* Blue Glow - Dark Mode */
+.glow-blue {
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.3);
+}
+
+/* Blue Glow - Light Mode */
+html.light .glow-blue {
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.2);
+}
+
+/* Premium Input - Dark Mode */
+.premium-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transition: all 300ms ease;
+}
+
+.premium-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.premium-input:focus {
+  outline: none;
+  border-color: rgba(14, 165, 233, 0.5);
+  background-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+}
+
+/* Premium Input - Light Mode */
+html.light .premium-input {
+  background-color: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  color: #1e293b;
+}
+
+html.light .premium-input::placeholder {
+  color: rgba(30, 41, 59, 0.5);
+}
+
+html.light .premium-input:focus {
+  outline: none;
+  border-color: rgba(14, 165, 233, 0.6);
+  background-color: rgba(14, 165, 233, 0.15);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+}
+
+/* Premium Button Primary - Dark Mode */
+.premium-btn-primary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(14, 165, 233, 0.5);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+  cursor: pointer;
+}
+
+.premium-btn-primary:hover {
+  background: linear-gradient(135deg, #06b6d4, #0ea5e9);
+  box-shadow: 0 20px 40px rgba(14, 165, 233, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.premium-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Premium Button Primary - Light Mode */
+html.light .premium-btn-primary {
+  background: linear-gradient(135deg, #0284c7, #0ea5e9);
+  color: white;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.25);
+}
+
+html.light .premium-btn-primary:hover {
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  box-shadow: 0 20px 40px rgba(14, 165, 233, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #0ea5e9, #0284c7);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #06b6d4, #0ea5e9);
+}
+
+/* Animation delays for staggered effects */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animation-delay-2000 {
+  animation-delay: 2000ms;
+}
+
+.animate-pulse {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.4s cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
 }
