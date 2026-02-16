@@ -287,7 +287,7 @@ export default function ExcelGridEditor({
       const shareCode = 'main-syllabus';
       
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const link = `${baseUrl}/syllabus/share/${shareCode}`;
+      const link = `${baseUrl}/s/${shareCode}`;
       setShareLink(link);
       showMessage('Share link created! (Same link every time)', 'success');
     } catch (error) {
