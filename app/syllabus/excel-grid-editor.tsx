@@ -269,10 +269,11 @@ export default function ExcelGridEditor({
       showMessage('Creating share link...', 'success');
       
       // Import Firebase functions (already imported in parent)
-      const { collection, addDoc, Timestamp } = await import('firebase/firestore');
+      const { collection, setDoc, doc } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
       
-      // Store the schedule in Firebase with isPublic flag
+      // Store the schedule in Firebase with a fixed ID (main-syllabus)
+      // This ensures the same link is always used, and it updates with latest data
       const shareData = {
         rows: rows,
         isPublic: true,
@@ -280,14 +281,15 @@ export default function ExcelGridEditor({
         updatedAt: new Date().toISOString(),
       };
       
-      // Add to 'shared-schedules' collection - Firebase auto-generates short ID
-      const docRef = await addDoc(collection(db, 'shared-schedules'), shareData);
-      const shareCode = docRef.id;
+      // Use fixed document ID 'main-syllabus' so the share link never changes
+      const docRef = doc(db, 'shared-schedules', 'main-syllabus');
+      await setDoc(docRef, shareData, { merge: true });
+      const shareCode = 'main-syllabus';
       
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       const link = `${baseUrl}/syllabus/share/${shareCode}`;
       setShareLink(link);
-      showMessage('Share link created!', 'success');
+      showMessage('Share link created! (Same link every time)', 'success');
     } catch (error) {
       console.error('Error creating share link:', error);
       showMessage('Failed to create share link', 'error');
