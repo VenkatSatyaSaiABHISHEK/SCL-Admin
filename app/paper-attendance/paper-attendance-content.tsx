@@ -78,34 +78,57 @@ export default function PaperAttendanceContent() {
 
     try {
       setLoading(true);
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
-      // Parse students from Excel
-      const parsedStudents = jsonData.map((row, idx) => ({
-        id: `student-${idx}`,
-        rollNo: row['Roll No'] || row['rollNo'] || '',
-        name: row['Student Name'] || row['name'] || '',
-        branch: row['Branch'] || row['branch'] || '',
-        year: row['Year'] || row['year'] || '',
-        section: row['Section'] || row['section'] || '',
-      })).filter(s => s.rollNo && s.name);
-
-      setStudents(parsedStudents);
-      // Initialize all as absent
-      const initialStatus: Record<string, boolean> = {};
-      parsedStudents.forEach(s => {
-        initialStatus[s.id] = false;
-      });
-      setAttendanceStatus(initialStatus);
+      console.log('📂 Reading file:', file.name);
       
-      showMessage(`✅ Loaded ${parsedStudents.length} students successfully!`, 'success');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = event.target?.result;
+          console.log('📝 File loaded, parsing...');
+          
+          const workbook = XLSX.read(data, { type: 'binary' });
+          console.log('📊 Workbook parsed, sheets:', workbook.SheetNames);
+          
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+          
+          console.log('📋 Raw data:', jsonData);
+
+          // Parse students from Excel
+          const parsedStudents = jsonData.map((row, idx) => ({
+            id: `student-${idx}`,
+            rollNo: String(row['Roll No'] || row['rollNo'] || row['R No'] || '').trim(),
+            name: String(row['Student Name'] || row['name'] || row['Name'] || '').trim(),
+            branch: String(row['Branch'] || row['branch'] || '').trim(),
+            year: String(row['Year'] || row['year'] || '').trim(),
+            section: String(row['Section'] || row['section'] || '').trim(),
+          })).filter(s => s.rollNo && s.name);
+
+          console.log('✨ Parsed students:', parsedStudents);
+
+          setStudents(parsedStudents);
+          // Initialize all as absent
+          const initialStatus: Record<string, boolean> = {};
+          parsedStudents.forEach(s => {
+            initialStatus[s.id] = false;
+          });
+          setAttendanceStatus(initialStatus);
+          
+          showMessage(`✅ Loaded ${parsedStudents.length} students successfully!`, 'success');
+        } catch (error) {
+          console.error('Parse error:', error);
+          showMessage('❌ Error parsing Excel file: ' + (error as any).message, 'error');
+        } finally {
+          setLoading(false);
+          // Reset input to allow re-upload of same file
+          e.target.value = '';
+        }
+      };
+      
+      reader.readAsBinaryString(file);
     } catch (error) {
-      showMessage('❌ Error parsing Excel file', 'error');
-      console.error('Upload error:', error);
-    } finally {
+      console.error('File read error:', error);
+      showMessage('❌ Error reading file: ' + (error as any).message, 'error');
       setLoading(false);
     }
   };
