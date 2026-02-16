@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ChevronUp, ChevronDown, MoreVertical, Plus, Download, Share2, Copy, Search, RotateCcw, RotateCw, X, Eye, EyeOff, Info } from 'lucide-react';
+import { ChevronUp, ChevronDown, MoreVertical, Plus, Download, Share2, Copy, Search, RotateCcw, RotateCw, X, Eye, EyeOff, Info, FileText, Link as LinkIcon } from 'lucide-react';
 
 interface SyllabusRow {
   id: string;
@@ -11,6 +11,7 @@ interface SyllabusRow {
   subtopics: string;
   mentors: string[];
   status: 'Upcoming' | 'Completed' | 'Delayed';
+  studyMaterial?: string;
 }
 
 interface Mentor {
@@ -58,6 +59,7 @@ export default function ExcelGridEditor({
             subtopics: '',
             mentors: [],
             status: 'Upcoming',
+            studyMaterial: '',
           },
         ]
   );
@@ -319,6 +321,7 @@ export default function ExcelGridEditor({
     { key: 'subtopics', label: 'Subtopics', width: 320 },
     { key: 'status', label: 'Status', width: 110 },
     { key: 'mentors', label: 'Mentors', width: 150 },
+    { key: 'studyMaterial', label: 'Study Material', width: 200 },
   ];
 
   const getTruncatedText = (text: string, maxChars: number = 50) => {
@@ -421,13 +424,14 @@ export default function ExcelGridEditor({
                   <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs border-r border-gray-200" style={{width: '250px'}}>Topic</th>
                   <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs border-r border-gray-200" style={{width: '320px'}}>Subtopics</th>
                   <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs border-r border-gray-200 w-32">Status</th>
-                  <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs w-40">Mentors</th>
+                  <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs border-r border-gray-200 w-40">Mentors</th>
+                  <th className="px-3 py-3 text-left text-gray-700 font-semibold text-xs border-r border-gray-200 w-48">Study Material</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                       {searchTerm ? 'No results found' : 'No rows yet. Click the + button to add one.'}
                     </td>
                   </tr>
@@ -686,6 +690,46 @@ export default function ExcelGridEditor({
                           )}
                         </div>
                       </td>
+
+                      {/* Study Material - Link input */}
+                      <td className="px-3 py-2 border-l border-gray-200 bg-white align-middle">
+                        {editingCell?.rowId === row.id && editingCell?.column === 'studyMaterial' ? (
+                          <input
+                            autoFocus
+                            type="text"
+                            placeholder="Paste link (Google Drive, PDF, etc.)"
+                            value={row.studyMaterial || ''}
+                            onChange={(e) => updateCell(row.id, 'studyMaterial', e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            onKeyDown={(e) => e.key === 'Enter' && setEditingCell(null)}
+                            className="w-full px-2 py-1 text-xs border border-blue-400 rounded"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <div
+                            className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1 rounded"
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCell({ rowId: row.id, column: 'studyMaterial' });
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (row.studyMaterial) {
+                                window.open(row.studyMaterial, '_blank');
+                              }
+                            }}
+                          >
+                            {row.studyMaterial ? (
+                              <>
+                                <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                <span className="text-xs text-blue-600 font-semibold truncate max-w-[150px]">Material</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-400">No link</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -794,6 +838,23 @@ export default function ExcelGridEditor({
                     })}
                   </div>
                 </div>
+              )}
+
+              {/* Study Material */}
+              {detailRow.studyMaterial && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Study Material</label>
+                  <a
+                    href={detailRow.studyMaterial}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-xs font-semibold"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Download
+                  </a>
+                </div>
+              )}
               )}
             </div>
 

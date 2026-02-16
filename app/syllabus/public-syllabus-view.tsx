@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Share2, ChevronDown, X } from 'lucide-react';
+import { Download, Share2, ChevronDown, X, FileText } from 'lucide-react';
 
 interface SyllabusRow {
   id: string;
@@ -11,6 +11,7 @@ interface SyllabusRow {
   subtopics: string;
   mentors: string[];
   status: 'Upcoming' | 'Completed' | 'Delayed';
+  studyMaterial?: string;
 }
 
 interface Mentor {
@@ -259,15 +260,30 @@ export default function PublicSyllabusView({
                           </div>
                         )}
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedItem(item);
-                        }}
-                        className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold"
-                      >
-                        Expand →
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {item.studyMaterial && (
+                          <a
+                            href={item.studyMaterial}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition"
+                            title="Download study material"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            Download
+                          </a>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItem(item);
+                          }}
+                          className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold"
+                        >
+                          Expand →
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -353,6 +369,22 @@ export default function PublicSyllabusView({
                                 </div>
                               )}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Study Material */}
+                        {item.studyMaterial && (
+                          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <a
+                              href={item.studyMaterial}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-semibold flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition"
+                            >
+                              <FileText className="w-4 h-4" />
+                              Download Study Material
+                            </a>
                           </div>
                         )}
                       </div>
@@ -444,6 +476,22 @@ export default function PublicSyllabusView({
                   </li>
                 ))}
               </ul>
+
+              {/* Study Material Download */}
+              {selectedItem.studyMaterial && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Study Material</h4>
+                  <a
+                    href={selectedItem.studyMaterial}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold text-sm"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Download PDF / Material
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Close Button */}
