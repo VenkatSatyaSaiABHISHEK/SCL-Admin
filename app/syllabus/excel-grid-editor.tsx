@@ -855,7 +855,6 @@ export default function ExcelGridEditor({
                   </a>
                 </div>
               )}
-              )}
             </div>
 
             {/* Open details button */}
