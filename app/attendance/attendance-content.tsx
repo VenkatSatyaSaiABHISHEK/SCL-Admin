@@ -1327,7 +1327,7 @@ export default function AttendanceContent() {
               <button
                 className="flex-1 flex items-center justify-center gap-2 bg-[#16a34a] hover:bg-[#15803d] text-white px-6 py-3 rounded-xl transition font-semibold"
                 onClick={() => {
-                  showToast('PDF download feature coming soon!', 'info');
+                  showToast('PDF download feature coming soon!', 'success');
                 }}
               >
                 Download PDF
