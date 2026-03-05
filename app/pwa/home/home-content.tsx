@@ -6,10 +6,12 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, onSnapshot, collection, getDocs, query, where } from 'firebase/firestore';
 import { Bell, MapPin, Clock, BookOpen, Trophy, Calendar, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export default function HomeContent() {
   const router = useRouter();
   const { currentUser, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState({
     name: 'Student',
     email: '',
@@ -255,6 +257,8 @@ export default function HomeContent() {
         }
       } catch (error) {
         console.error('❌ Home PWA: Error loading ranking data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -609,6 +613,25 @@ export default function HomeContent() {
     
     loadLatestAttendance();
   }, [currentUser]);
+
+  // Loading state with Lottie animation
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <DotLottieReact 
+              src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
+              loop
+              autoplay
+              style={{ width: '200px', height: '200px' }}
+            />
+          </div>
+          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
