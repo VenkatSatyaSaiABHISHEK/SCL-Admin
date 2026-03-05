@@ -64,14 +64,17 @@ export default function RankingsContent() {
         const student = doc.data();
         if (student.rollNo && (student.photoURL || student.photoUrl || student.avatar)) {
           studentPhotoMap[student.rollNo] = student.photoURL || student.photoUrl || student.avatar;
+          console.log('📸 Found photo for:', student.rollNo, student.name, studentPhotoMap[student.rollNo]);
         }
       });
+      console.log('📸 Total students with photos:', Object.keys(studentPhotoMap).length);
       
       const allRankings: RankingData[] = [];
       
       rankingsSnapshot.forEach((doc) => {
         const data = doc.data();
         const taskScore = Object.values(data.taskMarks || {}).reduce((sum: number, mark) => sum + (mark as number), 0);
+        const photoURL = studentPhotoMap[data.rollNo || doc.id];
         
         allRankings.push({
           rollNo: data.rollNo || doc.id,
@@ -81,8 +84,12 @@ export default function RankingsContent() {
           bonusMarks: data.bonusMarks || 0,
           totalScore: data.totalScore || 0,
           rank: data.rank || 0,
-          photoURL: studentPhotoMap[data.rollNo || doc.id]
+          photoURL: photoURL
         });
+        
+        if (data.rank <= 3) {
+          console.log(`🏆 Rank ${data.rank} - ${data.name} (${data.rollNo}):`, photoURL ? '✅ Has photo' : '❌ No photo');
+        }
       });
 
       // Sort by rank
@@ -313,19 +320,29 @@ export default function RankingsContent() {
                             {/* Avatar/Photo */}
                             <div className="flex justify-center mb-3">
                               {entry.photoURL ? (
-                                <img
-                                  src={entry.photoURL}
-                                  alt={entry.name}
-                                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                  }}
-                                />
-                              ) : null}
-                              <div className={`w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white ${entry.photoURL ? 'hidden' : ''}`}>
-                                {entry.name.charAt(0).toUpperCase()}
-                              </div>
+                                <div className="relative w-20 h-20">
+                                  <img
+                                    src={entry.photoURL}
+                                    alt={entry.name}
+                                    className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                                    onError={(e) => {
+                                      const target = e.currentTarget as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallback = target.parentElement?.querySelector('.fallback-avatar');
+                                      if (fallback) {
+                                        fallback.classList.remove('hidden');
+                                      }
+                                    }}
+                                  />
+                                  <div className="fallback-avatar hidden w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white absolute top-0 left-0">
+                                    {entry.name.charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white">
+                                  {entry.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                             </div>
 
                             {/* Student Name - Larger and more visible */}
