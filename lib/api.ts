@@ -476,6 +476,8 @@ export const getCourses = async (studentId?: string) => {
     const courses = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
+      progress: 0,
+      attendance: 0,
     }));
 
     // If student ID provided, get their specific progress/attendance

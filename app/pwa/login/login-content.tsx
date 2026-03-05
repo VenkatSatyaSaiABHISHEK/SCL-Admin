@@ -64,6 +64,7 @@ export default function LoginContent() {
         {/* Animation Branding */}
         <div className="text-center mb-4">
           <div className="flex justify-center">
+            {/* @ts-ignore */}
             <dotlottie-wc 
               src="https://lottie.host/fa9c1c4a-3175-421d-b715-1e6ba38ae590/qHIKV3iGeC.lottie"
               style={{ width: '220px', height: '220px' }}

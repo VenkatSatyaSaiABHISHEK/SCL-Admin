@@ -82,8 +82,10 @@ export default function ProfileContent() {
         console.log('🔍 Profile: Found teams:', teamsSnapshot.size);
         
         // Find the team where this student is a member
-        let foundTeam = null;
-        teamsSnapshot.forEach((doc) => {
+        type TeamData = { teamId: string; teamName: string; leaderRollNo: string; members: string[] };
+        let foundTeam: TeamData | null = null;
+        
+        for (const doc of teamsSnapshot.docs) {
           const data = doc.data();
           console.log('🔍 Profile: Checking team:', data.teamName, 'members:', data.members);
           
@@ -92,12 +94,13 @@ export default function ProfileContent() {
             console.log('✅ Profile: Found student in team:', data.teamName);
             foundTeam = {
               teamId: doc.id,
-              teamName: data.teamName,
-              leaderRollNo: data.leaderRollNo,
-              members: data.members
+              teamName: data.teamName as string,
+              leaderRollNo: data.leaderRollNo as string,
+              members: data.members as string[]
             };
+            break;
           }
-        });
+        }
         
         if (foundTeam) {
           console.log('✅ Profile: Loading team member details...');
@@ -116,7 +119,7 @@ export default function ProfileContent() {
                   rollNo: student.rollNo
                 });
                 
-                if (student.rollNo === foundTeam.leaderRollNo) {
+                if (student.rollNo === foundTeam!.leaderRollNo) {
                   leaderName = student.name;
                 }
               }

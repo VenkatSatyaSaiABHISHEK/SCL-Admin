@@ -527,16 +527,6 @@ export default function RankingsContent() {
                 />
                 <span className="text-sm">Enable double-click auto-fill</span>
               </label>
-
-              {selectedStudents.size > 0 && (
-                <button
-                  onClick={handleBulkGiveFullMarks}
-                  className="ml-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
-                >
-                  <Award className="w-5 h-5" />
-                  Give Full Marks to {selectedStudents.size} Selected
-                </button>
-              )}
             </div>
 
             {/* Legend */}
@@ -662,7 +652,7 @@ export default function RankingsContent() {
                               onChange={(e) =>
                                 handleCellChange(student.rollNo, task.id, e.target.value)
                               }
-                              onDoubleClick={() => handleDoubleClick(student.rollNo, task.id, task.maxMarks)}
+                              onDoubleClick={() => handleDoubleClick(student.rollNo, task.id)}
                               className="w-16 px-2 py-1 bg-white/5 border border-white/20 rounded text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </td>

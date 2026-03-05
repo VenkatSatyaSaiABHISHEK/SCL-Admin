@@ -49,7 +49,7 @@ class NotificationService {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(this.vapidKey || '')
+        applicationServerKey: this.urlBase64ToUint8Array(this.vapidKey || '') as BufferSource
       });
 
       // Store subscription in Firebase for the current user

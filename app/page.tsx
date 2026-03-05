@@ -29,6 +29,7 @@ export default function Home() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="flex items-center justify-center mx-auto mb-6">
+            {/* @ts-ignore */}
             <dotlottie-wc 
               src="https://lottie.host/94fd96de-ccd4-4c96-a074-697be169dcb6/bpu8TIzVQV.lottie" 
               style={{ width: '300px', height: '300px' }}
