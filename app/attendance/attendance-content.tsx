@@ -162,7 +162,7 @@ export default function AttendanceContent() {
       maximumAge: 0 // Don't use cached location
     };
 
-    const processReading = (position) => {
+    const processReading = (position: GeolocationPosition) => {
       const accuracy = position.coords.accuracy;
       console.log(`GPS reading ${readingCount + 1}: accuracy ${accuracy}m`);
       
@@ -217,7 +217,7 @@ export default function AttendanceContent() {
       }
     };
     
-    const handleError = (error) => {
+    const handleError = (error: GeolocationPositionError) => {
       console.error('Location error:', error);
       readingCount++;
       
