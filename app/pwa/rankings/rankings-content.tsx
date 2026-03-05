@@ -62,8 +62,8 @@ export default function RankingsContent() {
       const studentPhotoMap: { [rollNo: string]: string } = {};
       allStudentsSnapshot.forEach((doc) => {
         const student = doc.data();
-        if (student.rollNo && (student.photoURL || student.photoUrl || student.avatar)) {
-          studentPhotoMap[student.rollNo] = student.photoURL || student.photoUrl || student.avatar;
+        if (student.rollNo && (student.photoURL || student.photoUrl || student.avatar || student.profilePhoto)) {
+          studentPhotoMap[student.rollNo] = student.photoURL || student.photoUrl || student.avatar || student.profilePhoto;
           console.log('📸 Found photo for:', student.rollNo, student.name, studentPhotoMap[student.rollNo]);
         }
       });
