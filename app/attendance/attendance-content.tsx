@@ -373,7 +373,7 @@ export default function AttendanceContent() {
           longitude: sessionLocation.longitude,
           radius: sessionForm.radius,
           address: 'Campus Location',
-          source: manualLocation.useManual ? 'manual' : 'gps',
+          source: (manualLocation.useManual ? 'manual' : 'gps') as 'gps' | 'manual',
           accuracy: !manualLocation.useManual && currentLocation?.accuracy ? currentLocation.accuracy : null
         },
         createdBy: currentUser.name || currentUser.email || 'Admin',
