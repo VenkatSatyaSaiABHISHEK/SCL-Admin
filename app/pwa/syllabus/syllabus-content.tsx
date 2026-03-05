@@ -363,6 +363,26 @@ export default function SyllabusContent() {
     return days[date.getDay()];
   };
 
+  // Loading state with Lottie animation
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            {/* @ts-ignore */}
+            <dotlottie-wc 
+              src="https://lottie.host/2f11c23c-ea50-4e8e-83af-6a52c7eaf570/HCSWVzLOeK.lottie" 
+              style={{ width: '300px', height: '300px' }}
+              autoplay
+              loop
+            />
+          </div>
+          <p className="text-gray-600 font-medium">Loading syllabus...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Error state
   if (error) {
     return (
@@ -478,8 +498,14 @@ export default function SyllabusContent() {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <span className="text-2xl">📚</span>
+          <div className="flex justify-center mb-4">
+            {/* @ts-ignore */}
+            <dotlottie-wc 
+              src="https://lottie.host/2f11c23c-ea50-4e8e-83af-6a52c7eaf570/HCSWVzLOeK.lottie" 
+              style={{ width: '200px', height: '200px' }}
+              autoplay
+              loop
+            />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Classes Found</h3>
           <p className="text-gray-500 text-sm">Your schedule will appear here once classes are added</p>
