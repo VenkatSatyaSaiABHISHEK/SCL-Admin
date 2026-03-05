@@ -99,7 +99,7 @@ async function uploadStudents(csvPath) {
         // Generate credentials
         const username = generateUsername(rollNo);
         const password = generatePassword();
-        const qrId = `QR-${crypto.randomBytes(8).toString('hex')}`;
+
 
         // Check if email already exists
         try {
@@ -133,7 +133,6 @@ async function uploadStudents(csvPath) {
           phoneNo: phone || '',
           linkedin: linkedin || '',
           github: github || '',
-          qrId: qrId,
           createdAt: admin.firestore.Timestamp.now(),
         };
 
@@ -146,14 +145,12 @@ async function uploadStudents(csvPath) {
           email,
           username,
           password,
-          qrId,
         });
 
         console.log(`✅ ${name} (${rollNo})`);
         console.log(`   📧 Email: ${email}`);
         console.log(`   👤 Username: ${username}`);
         console.log(`   🔑 Password: ${password}`);
-        console.log(`   🎫 QR ID: ${qrId}`);
         console.log('');
 
         successCount++;

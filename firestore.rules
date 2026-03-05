@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =============================
+    // Helpers (SIMPLIFIED - NO COMPLEX LOOKUPS)
+    // =============================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // =============================
+    // USERS
+    // =============================
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write, create, delete: if isSignedIn(); // Simplified for testing
+    }
+
+    // =============================
+    // STUDENTS
+    // =============================
+    match /students/{uid} {
+      allow read: if true; // Public read for QR code verification
+      allow write, create, delete: if isSignedIn(); // Simplified for testing
+    }
+
+    // Email-based login query
+    match /students/{document} {
+      allow list: if request.query.limit <= 10
+        && ('email' in request.query.where || true); // Allow public QR verification queries
+    }
+
+    // =============================
+    // ACTIVE SESSIONS
+    // =============================
+    match /activeSessions/{uid} {
+      allow read: if isSignedIn();
+      allow write, create: if request.auth.uid == uid;
+      allow delete: if request.auth.uid == uid;
+    }
+
+    // =============================
+    // LOGS
+    // =============================
+    match /logs/{logId} {
+      allow read: if isSignedIn();
+      allow write, create: if isSignedIn();
+    }
+
+    // =============================
+    // ATTENDANCE (legacy)
+    // =============================
+    match /attendance/{attendanceId} {
+      allow read, write, create: if isSignedIn();
+    }
+
+    match /attendance/{attendanceId}/details/{detailId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // =============================
+    // 🔥 ATTENDANCE SESSIONS
+    // =============================
+    match /attendanceSessions/{sessionId} {
+      allow read: if isSignedIn(); // All authenticated users can read
+      allow write, create, delete: if isSignedIn(); // Simplified for testing
+    }
+
+    // =============================
+    // 🔥 ATTENDANCE SUBMISSIONS (CRITICAL FIX)
+    // =============================
+    match /attendanceSubmissions/{submissionId} {
+      allow read: if isSignedIn();
+
+      // Students can create their own submissions
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if isSignedIn();
+    }
+
+    // =============================
+    // ✅ STUDENT ATTENDANCE (CRITICAL FIX)
+    // =============================
+    match /studentAttendance/{attendanceId} {
+      // Anyone signed in can read
+      allow read: if isSignedIn();
+
+      // Users can create/update their own attendance records
+      // Key fix: just check if userId in the data matches auth.uid
+      allow create, update: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if isSignedIn();
+    }
+
+    // =============================
+    // OTHER COLLECTIONS
+    // =============================
+    match /mentors/{mentorId} {
+      allow read: if isSignedIn();
+      allow write, create, delete: if isSignedIn();
+    }
+
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow write, create, delete: if isSignedIn();
+    }
+
+    match /teamScores/{scoreId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write, create, delete: if isSignedIn();
+    }
+
+    match /syllabus/{syllabusId} {
+      allow read: if isSignedIn();
+      allow write, create, delete: if isSignedIn();
+    }
+
+    match /rankings/{rankingId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /appConfig/{configId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /systemHealth/{healthId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /registrationRequests/{requestId} {
+      allow read, write, create, delete: if isSignedIn();
+    }
+
+    match /shared-schedules/{scheduleId} {
+      allow read: if true; // Public read
+      allow write, create, delete: if isSignedIn();
+    }
+
+    // =============================
+    // DEFAULT DENY
+    // =============================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

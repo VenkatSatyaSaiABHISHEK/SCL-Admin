@@ -1,22 +1,19 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
-let adminApp: ReturnType<typeof initializeApp> | null = null;
-try {
-  const serviceAccountKey = process.env.FIREBASE_ADMIN_SDK_KEY;
-  if (!serviceAccountKey) {
-    throw new Error('FIREBASE_ADMIN_SDK_KEY environment variable is not set');
+function getAdminAuth() {
+  if (!getApps().length) {
+    const serviceAccountKey = process.env.FIREBASE_ADMIN_SDK_KEY;
+    if (!serviceAccountKey) {
+      throw new Error('FIREBASE_ADMIN_SDK_KEY environment variable is not set');
+    }
+    initializeApp({
+      credential: cert(JSON.parse(serviceAccountKey)),
+    });
   }
-  const serviceAccount = JSON.parse(serviceAccountKey);
-  adminApp = initializeApp({
-    credential: cert(serviceAccount as any),
-  });
-} catch (error) {
-  // App already initialized
+  return getAuth();
 }
-
-const auth = getAuth();
 
 interface ResetPasswordRequest {
   email: string;
@@ -29,6 +26,7 @@ interface ResetPasswordRequest {
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAdminAuth();
     const body: ResetPasswordRequest = await request.json();
 
     if (!body.email || !body.newPassword) {
@@ -38,38 +36,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    const userRecord = await auth.getUserByEmail(body.email);
-
-    // Update password
-    await auth.updateUser(userRecord.uid, {
-      password: body.newPassword,
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: `Password reset for ${body.email}`,
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error resetting password:', error);
-
-    let errorMessage = 'Failed to reset password';
-
-    if (error instanceof Error) {
-      if (error.message.includes('user-not-found')) {
-        errorMessage = 'User not found';
-      } else if (error.message.includes('weak-password')) {
-        errorMessage = 'Password is too weak';
+    // Try to find existing user, create if not found
+    let userRecord;
+    try {
+      userRecord = await auth.getUserByEmail(body.email);
+      // User exists — update their password
+      await auth.updateUser(userRecord.uid, {
+        password: body.newPassword,
+      });
+    } catch (lookupError: any) {
+      if (lookupError?.code === 'auth/user-not-found') {
+        // User doesn't exist in Firebase Auth — create them
+        userRecord = await auth.createUser({
+          email: body.email,
+          password: body.newPassword,
+        });
       } else {
-        errorMessage = error.message;
+        throw lookupError; // Re-throw unexpected errors
       }
     }
 
     return NextResponse.json(
-      { success: false, error: errorMessage },
+      {
+        success: true,
+        message: `Password synced for ${body.email}`,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error syncing password:', error);
+
+    let errorMessage = 'Failed to sync password';
+
+    if (error?.code === 'auth/weak-password') {
+      errorMessage = 'Password is too weak (min 6 characters)';
+    } else if (error?.code === 'auth/invalid-email') {
+      errorMessage = 'Invalid email address';
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
+    return NextResponse.json(
+      { success: false, error: errorMessage, code: error?.code ?? null },
       { status: 500 }
     );
   }

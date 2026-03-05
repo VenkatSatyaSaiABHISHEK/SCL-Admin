@@ -135,6 +135,11 @@ export default function TeamsContent() {
       return;
     }
 
+    if (formData.selectedMembers.length > 10) {
+      showToast('Maximum 10 members allowed per team', 'error');
+      return;
+    }
+
     try {
       const teamId = `team-${Date.now()}`;
       const teamRef = doc(db, 'teams', teamId);
@@ -181,10 +186,10 @@ export default function TeamsContent() {
 
       if (index > -1) {
         updated.splice(index, 1);
-      } else if (updated.length < 6) {
+      } else if (updated.length < 10) {
         updated.push(rollNo);
       } else {
-        showToast('Maximum 6 members allowed', 'error');
+        showToast('Maximum 10 members allowed per team', 'error');
         return prev;
       }
 
@@ -273,10 +278,10 @@ export default function TeamsContent() {
               {/* Members Selection */}
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-2">
-                  Select Members (5-6 people)
+                  Select Members (5-10 people)
                 </label>
                 <p className="text-white/60 text-xs mb-3">
-                  Selected: {formData.selectedMembers.length}/6
+                  Selected: {formData.selectedMembers.length}/10
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto">
                   {allStudents.map((student) => (

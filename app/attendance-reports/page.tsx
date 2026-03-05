@@ -1,11 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const AttendanceReportsContent = dynamic(
-  () => import('./attendance-reports-content'),
-  { ssr: false }
-);
+import AttendanceReportsContent from './attendance-reports-content';
 
 export default function AttendanceReportsPage() {
   return <AttendanceReportsContent />;

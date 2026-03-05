@@ -1,5 +1,5 @@
-import RankingsContent from './rankings-content';
+import RankingsViewContent from './rankings-view-content';
 
 export default function RankingsPage() {
-  return <RankingsContent />;
+  return <RankingsViewContent />;
 }

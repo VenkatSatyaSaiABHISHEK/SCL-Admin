@@ -13,6 +13,7 @@ interface StudentData {
   name: string;
   rollNo: string;
   username: string;
+  password?: string;
   passwordHash: string;
   qrId: string;
   year?: string;
@@ -110,7 +111,8 @@ export default function StudentsContent() {
     const rows = filteredStudents.map(s => {
       const uploadDate = s.createdAt?.toDate?.() || new Date();
       const formattedDate = uploadDate.toLocaleDateString('en-US');
-      return [s.name, s.rollNo, s.email || '', s.phoneNo || '', s.username, s.passwordHash, s.qrId, s.year || '', s.backlogs || '', formattedDate]
+      const password = s.password || s.passwordHash || '';
+      return [s.name, s.rollNo, s.email || '', s.phoneNo || '', s.username, password, s.qrId, s.year || '', s.backlogs || '', formattedDate]
         .map(field => `"${String(field).replace(/"/g, '""')}"`)
         .join(',');
     });
@@ -155,8 +157,12 @@ export default function StudentsContent() {
           results.success++;
         } else {
           results.failed++;
-          const error = await response.json();
-          results.errors.push({ name: student.name, error: error.error });
+          try {
+            const error = await response.json();
+            results.errors.push({ name: student.name, error: error.error || 'Unknown error' });
+          } catch {
+            results.errors.push({ name: student.name, error: `Server error (${response.status})` });
+          }
         }
       } catch (error) {
         results.failed++;
@@ -403,20 +409,27 @@ export default function StudentsContent() {
                 <label className="block text-xs font-semibold text-gray-600 mb-2">Password</label>
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
                   <code className="font-mono text-sm text-gray-900 flex-1">
-                    {showPassword ? credentialsModal.passwordHash : '••••••••'}
+                    {(credentialsModal.password || credentialsModal.passwordHash) ? 
+                      (showPassword ? (credentialsModal.password || credentialsModal.passwordHash) : '••••••••') :
+                      'No password set'
+                    }
                   </code>
-                  <button
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="p-1.5 hover:bg-gray-200 rounded transition"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
-                  </button>
-                  <button
-                    onClick={() => copyToClipboard(credentialsModal.passwordHash, `pass-${credentialsModal.id}`)}
-                    className="p-1.5 hover:bg-gray-200 rounded transition"
-                  >
-                    {copied === `pass-${credentialsModal.id}` ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-600" />}
-                  </button>
+                  {(credentialsModal.password || credentialsModal.passwordHash) && (
+                    <>
+                      <button
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="p-1.5 hover:bg-gray-200 rounded transition"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(credentialsModal.password || credentialsModal.passwordHash, `pass-${credentialsModal.id}`)}
+                        className="p-1.5 hover:bg-gray-200 rounded transition"
+                      >
+                        {copied === `pass-${credentialsModal.id}` ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-600" />}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 

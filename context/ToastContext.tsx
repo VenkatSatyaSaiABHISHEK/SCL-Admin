@@ -18,9 +18,12 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [toastCounter, setToastCounter] = useState(0);
 
   const showToast = (message: string, type: 'success' | 'error', duration = 4000) => {
-    const id = Date.now().toString();
+    const id = `${Date.now()}-${toastCounter}`;
+    setToastCounter(prev => prev + 1);
+    
     const newToast: ToastMessage = { id, message, type, duration };
     
     setToasts((prev) => [...prev, newToast]);

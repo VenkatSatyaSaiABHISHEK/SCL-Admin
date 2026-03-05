@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { Smartphone, Download } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -89,6 +90,18 @@ export default function LoginPage() {
                      linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)`
       }}
     >
+      {/* PWA Access Button */}
+      <button
+        onClick={() => router.push('/pwa')}
+        className="fixed top-6 right-6 z-50 glass-effect rounded-xl p-3 text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 group"
+        title="Access PWA (Mobile App)"
+      >
+        <div className="flex items-center gap-2">
+          <Smartphone className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:block text-sm font-medium">PWA App</span>
+          <Download className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </button>
       {/* Animated background elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-600/10 to-cyan-600/10 rounded-full blur-3xl animate-pulse" />

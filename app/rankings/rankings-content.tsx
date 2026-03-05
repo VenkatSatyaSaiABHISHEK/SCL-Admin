@@ -3,34 +3,31 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, User, Award, TrendingUp } from 'lucide-react';
+import { LogOut, User, Award, TrendingUp, Plus, Save, Trash2, Medal } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, setDoc, updateDoc } from 'firebase/firestore';
 
+// Data Interfaces
 interface StudentData {
-  rollNo: string;
-  name: string;
-}
-
-interface AttendanceRanking {
   rollNo: string;
   name: string;
   presentDays: number;
   totalDays: number;
-  attendancePercentage: number;
+  attendanceMarks: number;
+  taskMarks: { [taskId: string]: number };
+  bonusMarks: number;
+  totalScore: number;
   rank: number;
 }
 
-interface TeamScoreData {
-  teamId: string;
-  teamName: string;
-  leaderRollNo: string;
-  leaderName: string;
-  totalPoints: number;
-  rank: number;
-  taskCount: number;
+interface Task {
+  id: string;
+  title: string;
+  maxMarks: number;
+  dateCreated: string;
+  isActive: boolean;
 }
 
 interface AttendanceRecord {
@@ -44,11 +41,27 @@ export default function RankingsContent() {
   const { currentUser, isAdmin, logout } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'attendance' | 'team'>('attendance');
-  const [attendanceRankings, setAttendanceRankings] = useState<AttendanceRanking[]>([]);
-  const [teamRankings, setTeamRankings] = useState<TeamScoreData[]>([]);
+  
+  // State Management
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [allStudents, setAllStudents] = useState<Map<string, StudentData>>(new Map());
+  const [saving, setSaving] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  
+  // Task Management
+  const [showTaskDialog, setShowTaskDialog] = useState(false);
+  const [taskForm, setTaskForm] = useState({ title: '', maxMarks: 5 });
+  
+  // Auto-fill mode
+  const [autoFullMarks, setAutoFullMarks] = useState(true);
+
+  // =================== HANDLERS ===================
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -62,54 +75,50 @@ export default function RankingsContent() {
 
   useEffect(() => {
     if (mounted && isAdmin) {
-      loadData();
+      loadAllData();
     }
   }, [mounted, isAdmin]);
 
-  const loadData = async () => {
+  // =================== DATA LOADING ===================
+
+  const loadAllData = async () => {
     setLoading(true);
     try {
-      // Load all students
-      const studentsSnapshot = await getDocs(collection(db, 'students'));
-      const studentMap = new Map<string, StudentData>();
-      studentsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        studentMap.set(data.rollNo, {
-          rollNo: data.rollNo,
-          name: data.name,
-        });
-      });
-      setAllStudents(studentMap);
-
-      // Load attendance rankings
-      await loadAttendanceRankings(studentMap);
-
-      // Load team rankings
-      await loadTeamRankings(studentMap);
+      await Promise.all([
+        loadStudents(),
+        loadTasks()
+      ]);
     } catch (error) {
-      console.error('Error loading rankings:', error);
+      console.error('Error loading data:', error);
       showToast('Error loading rankings data', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadAttendanceRankings = async (studentMap: Map<string, StudentData>) => {
+  const loadStudents = async () => {
     try {
+      // Get all students
+      const studentsSnapshot = await getDocs(collection(db, 'students'));
+      const studentMap = new Map<string, { name: string }>();
+      
+      studentsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        studentMap.set(data.rollNo, { name: data.name });
+      });
+
+      // Get attendance records
       const attendanceSnapshot = await getDocs(
         query(collection(db, 'attendance'), orderBy('date', 'asc'))
       );
 
       // Calculate attendance for each student
-      const attendanceMap: {
-        [key: string]: { presentDays: number; totalDays: number };
-      } = {};
-
-      studentMap.forEach((student) => {
-        attendanceMap[student.rollNo] = { presentDays: 0, totalDays: 0 };
+      const attendanceMap: { [key: string]: { presentDays: number; totalDays: number } } = {};
+      
+      studentMap.forEach((_, rollNo) => {
+        attendanceMap[rollNo] = { presentDays: 0, totalDays: 0 };
       });
 
-      // Count attendance
       attendanceSnapshot.forEach((doc) => {
         const data = doc.data() as AttendanceRecord;
         if (data.presentStudents) {
@@ -129,117 +138,254 @@ export default function RankingsContent() {
         }
       });
 
-      // Create rankings
-      const rankings: AttendanceRanking[] = [];
+      // Get existing rankings data
+      const rankingsSnapshot = await getDocs(collection(db, 'rankings'));
+      const rankingsMap = new Map<string, any>();
+      
+      rankingsSnapshot.forEach((doc) => {
+        rankingsMap.set(doc.id, doc.data());
+      });
+
+      // Build student data array with comprehensive scoring
+      const studentsData: StudentData[] = [];
+      
       studentMap.forEach((student, rollNo) => {
         const attendance = attendanceMap[rollNo] || { presentDays: 0, totalDays: 0 };
-        const percentage = attendance.totalDays > 0 
-          ? Math.round((attendance.presentDays / attendance.totalDays) * 100)
-          : 0;
+        const rankingData = rankingsMap.get(rollNo) || {};
+        
+        const attendanceMarks = attendance.presentDays; // 1 mark per present day
+        const taskMarks = rankingData.taskMarks || {};
+        const bonusMarks = rankingData.bonusMarks || 0;
+        
+        // Calculate total task marks
+        const totalTaskMarks = Object.values(taskMarks).reduce((sum: number, marks) => sum + (marks as number), 0);
+        const totalScore = attendanceMarks + totalTaskMarks + bonusMarks;
 
-        rankings.push({
+        studentsData.push({
           rollNo,
           name: student.name,
           presentDays: attendance.presentDays,
           totalDays: attendance.totalDays,
-          attendancePercentage: percentage,
+          attendanceMarks,
+          taskMarks,
+          bonusMarks,
+          totalScore,
           rank: 0,
         });
       });
 
-      // Sort by percentage descending
-      rankings.sort((a, b) => {
-        if (b.attendancePercentage !== a.attendancePercentage) {
-          return b.attendancePercentage - a.attendancePercentage;
+      // Sort and assign ranks
+      studentsData.sort((a, b) => {
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
         }
-        return b.presentDays - a.presentDays;
+        return b.attendanceMarks - a.attendanceMarks; // Tie-breaker: higher attendance wins
       });
 
-      // Assign ranks
-      rankings.forEach((ranking, index) => {
-        ranking.rank = index + 1;
+      studentsData.forEach((student, index) => {
+        student.rank = index + 1;
       });
 
-      setAttendanceRankings(rankings);
+      setStudents(studentsData);
     } catch (error) {
-      console.error('Error loading attendance rankings:', error);
+      console.error('Error loading students:', error);
+      throw error;
     }
   };
 
-  const loadTeamRankings = async (studentMap: Map<string, StudentData>) => {
+  const loadTasks = async () => {
     try {
-      const teamsSnapshot = await getDocs(collection(db, 'teams'));
-      const teamScores = new Map<string, number>();
-      const teamDetails = new Map<
-        string,
-        { name: string; leaderRollNo: string; leaderName: string; taskCount: number }
-      >();
+      const tasksSnapshot = await getDocs(
+        query(collection(db, 'tasks'), orderBy('dateCreated', 'asc'))
+      );
+      
+      const tasksData: Task[] = [];
+      tasksSnapshot.forEach((doc) => {
+        tasksData.push({
+          id: doc.id,
+          ...doc.data()
+        } as Task);
+      });
+      
+      setTasks(tasksData.filter(t => t.isActive));
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+      throw error;
+    }
+  };
 
-      // Get team info and initialize scores
-      teamsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        teamScores.set(doc.id, 0);
-        const leaderName = studentMap.get(data.leaderRollNo)?.name || 'Unknown';
-        teamDetails.set(doc.id, {
-          name: data.teamName,
-          leaderRollNo: data.leaderRollNo,
-          leaderName,
-          taskCount: 0,
-        });
+  // =================== TASK MANAGEMENT ===================
+
+  const handleAddTask = async () => {
+    if (!taskForm.title.trim()) {
+      showToast('Please enter task title', 'error');
+      return;
+    }
+
+    try {
+      const taskId = `task_${Date.now()}`;
+      await setDoc(doc(db, 'tasks', taskId), {
+        title: taskForm.title,
+        maxMarks: taskForm.maxMarks,
+        dateCreated: new Date().toISOString(),
+        isActive: true
       });
 
-      // Get team scores
-      const scoresSnapshot = await getDocs(collection(db, 'teamScores'));
-      scoresSnapshot.forEach((doc) => {
-        const data = doc.data();
-        const currentScore = teamScores.get(data.teamId) || 0;
-        teamScores.set(data.teamId, currentScore + (data.scoreGiven || 0));
+      showToast('Task added successfully', 'success');
+      setShowTaskDialog(false);
+      setTaskForm({ title: '', maxMarks: 5 });
+      await loadTasks();
+    } catch (error) {
+      showToast('Error adding task', 'error');
+      console.error(error);
+    }
+  };
 
-        const details = teamDetails.get(data.teamId);
-        if (details) {
-          details.taskCount++;
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Delete this task? This will remove all marks for this task.')) return;
+
+    try {
+      await updateDoc(doc(db, 'tasks', taskId), { isActive: false });
+      showToast('Task deleted', 'success');
+      await loadTasks();
+    } catch (error) {
+      showToast('Error deleting task', 'error');
+      console.error(error);
+    }
+  };
+
+  // =================== MARKING SYSTEM ===================
+
+  const handleCellChange = (rollNo: string, taskId: string, value: string) => {
+    const numValue = Math.max(0, parseInt(value) || 0);
+    const task = tasks.find(t => t.id === taskId);
+    const maxMarks = task?.maxMarks || 5;
+    const finalValue = Math.min(numValue, maxMarks);
+
+    setStudents(prev => prev.map(student => {
+      if (student.rollNo === rollNo) {
+        const updatedTaskMarks = { ...student.taskMarks, [taskId]: finalValue };
+        const totalTaskMarks = Object.values(updatedTaskMarks).reduce((sum, marks) => sum + marks, 0);
+        const totalScore = student.attendanceMarks + totalTaskMarks + student.bonusMarks;
+        
+        return { ...student, taskMarks: updatedTaskMarks, totalScore };
+      }
+      return student;
+    }));
+
+    // Recalculate ranks
+    recalculateRanks();
+  };
+
+  const handleDoubleClick = (rollNo: string, taskId: string) => {
+    if (!autoFullMarks) return;
+    
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    handleCellChange(rollNo, taskId, String(task.maxMarks));
+  };
+
+  const handleBonusChange = (rollNo: string, value: string) => {
+    const numValue = parseInt(value) || 0;
+
+    setStudents(prev => prev.map(student => {
+      if (student.rollNo === rollNo) {
+        const totalTaskMarks = Object.values(student.taskMarks).reduce((sum, marks) => sum + marks, 0);
+        const totalScore = student.attendanceMarks + totalTaskMarks + numValue;
+        
+        return { ...student, bonusMarks: numValue, totalScore };
+      }
+      return student;
+    }));
+
+    recalculateRanks();
+  };
+
+  const recalculateRanks = () => {
+    setStudents(prev => {
+      const sorted = [...prev].sort((a, b) => {
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
         }
+        return b.attendanceMarks - a.attendanceMarks;
       });
 
-      // Create rankings
-      const rankings: TeamScoreData[] = Array.from(teamScores.entries()).map(
-        ([teamId, totalPoints]) => {
-          const details = teamDetails.get(teamId) || {
-            name: 'Unknown Team',
-            leaderRollNo: '',
-            leaderName: 'Unknown',
-            taskCount: 0,
-          };
-          return {
-            teamId,
-            teamName: details.name,
-            leaderRollNo: details.leaderRollNo,
-            leaderName: details.leaderName,
-            totalPoints,
-            rank: 0,
-            taskCount: details.taskCount,
-          };
-        }
+      sorted.forEach((student, index) => {
+        student.rank = index + 1;
+      });
+
+      return sorted;
+    });
+  };
+
+  // =================== BULK OPERATIONS ===================
+
+  const toggleStudentSelection = (rollNo: string) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rollNo)) {
+        newSet.delete(rollNo);
+      } else {
+        newSet.add(rollNo);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkGiveFullMarks = (taskId: string) => {
+    if (selectedStudents.size === 0) {
+      showToast('Please select students first', 'error');
+      return;
+    }
+
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    setStudents(prev => prev.map(student => {
+      if (selectedStudents.has(student.rollNo)) {
+        const updatedTaskMarks = { ...student.taskMarks, [taskId]: task.maxMarks };
+        const totalTaskMarks = Object.values(updatedTaskMarks).reduce((sum, marks) => sum + marks, 0);
+        const totalScore = student.attendanceMarks + totalTaskMarks + student.bonusMarks;
+        
+        return { ...student, taskMarks: updatedTaskMarks, totalScore };
+      }
+      return student;
+    }));
+
+    recalculateRanks();
+    showToast(`Full marks given to ${selectedStudents.size} students`, 'success');
+  };
+
+  // =================== SAVE TO DATABASE ===================
+
+  const handleSaveAllMarks = async () => {
+    setSaving(true);
+    try {
+      const promises = students.map(student => 
+        setDoc(doc(db, 'rankings', student.rollNo), {
+          rollNo: student.rollNo,
+          name: student.name,
+          attendanceMarks: student.attendanceMarks,
+          taskMarks: student.taskMarks,
+          bonusMarks: student.bonusMarks,
+          totalScore: student.totalScore,
+          rank: student.rank,
+          updatedAt: new Date().toISOString()
+        })
       );
 
-      // Sort by total points descending
-      rankings.sort((a, b) => b.totalPoints - a.totalPoints);
-
-      // Assign ranks
-      rankings.forEach((ranking, index) => {
-        ranking.rank = index + 1;
-      });
-
-      setTeamRankings(rankings);
+      await Promise.all(promises);
+      showToast('All rankings saved successfully!', 'success');
     } catch (error) {
-      console.error('Error loading team rankings:', error);
+      showToast('Error saving rankings', 'error');
+      console.error(error);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  // =================== RENDER ===================
 
   if (!mounted || !isAdmin || !currentUser) {
     return (
@@ -247,8 +393,8 @@ export default function RankingsContent() {
     );
   }
 
-  const topAttendance = attendanceRankings.slice(0, 10);
-  const topTeams = teamRankings.slice(0, 5);
+  const topStudents = students.slice(0, 10);
+  const allSelected = students.length > 0 && selectedStudents.size === students.length;
 
   return (
     <div className="min-h-screen">
@@ -273,34 +419,12 @@ export default function RankingsContent() {
       </nav>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-white mb-2">Rankings</h1>
-          <p className="text-white/60">View student and team rankings</p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8 border-b border-white/10">
-          <button
-            onClick={() => setActiveTab('attendance')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'attendance'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            Attendance Ranking
-          </button>
-          <button
-            onClick={() => setActiveTab('team')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'team'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            Team Task Ranking
-          </button>
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">Student Rankings</h1>
+          <p className="text-white/60">
+            Dynamic ranking system with attendance and task-based scoring
+          </p>
         </div>
 
         {/* Loading State */}
@@ -308,70 +432,66 @@ export default function RankingsContent() {
           <div className="flex items-center justify-center py-12">
             <p className="text-white/60">Loading rankings data...</p>
           </div>
-        ) : activeTab === 'attendance' ? (
-          // ATTENDANCE RANKING TAB
-          <div>
-            {/* Top 10 Cards */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">Top 10 Students</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {topAttendance.map((student, index) => (
+        ) : (
+          <>
+            {/* Top 10 Students */}
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <Medal className="w-7 h-7 text-yellow-400" />
+                Top 10 Students
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {topStudents.map((student, index) => (
                   <div
                     key={student.rollNo}
-                    className={`glass-effect-strong rounded-2xl border p-6 ${
+                    className={`glass-effect-strong rounded-xl border p-5 ${
                       index === 0
-                        ? 'border-yellow-400/30 bg-yellow-950/20'
+                        ? 'border-yellow-400/40 bg-yellow-950/30'
                         : index === 1
-                        ? 'border-gray-400/30 bg-gray-950/20'
+                        ? 'border-gray-400/40 bg-gray-950/30'
                         : index === 2
-                        ? 'border-orange-400/30 bg-orange-950/20'
+                        ? 'border-orange-400/40 bg-orange-950/30'
                         : 'border-white/15'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                              index === 0
-                                ? 'bg-yellow-500/30 text-yellow-300'
-                                : index === 1
-                                ? 'bg-gray-500/30 text-gray-300'
-                                : index === 2
-                                ? 'bg-orange-500/30 text-orange-300'
-                                : 'bg-blue-500/30 text-blue-300'
-                            }`}
-                          >
-                            {student.rank}
-                          </div>
-                          <div>
-                            <p className="text-white font-bold">{student.name}</p>
-                            <p className="text-white/60 text-sm">Roll: {student.rollNo}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <Award
-                        className={`w-6 h-6 ${
+                    <div className="flex items-center justify-between mb-3">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm ${
                           index === 0
-                            ? 'text-yellow-400'
+                            ? 'bg-yellow-500/30 text-yellow-300'
                             : index === 1
-                            ? 'text-gray-400'
+                            ? 'bg-gray-400/30 text-gray-300'
                             : index === 2
-                            ? 'text-orange-400'
-                            : 'text-white/40'
+                            ? 'bg-orange-500/30 text-orange-300'
+                            : 'bg-blue-500/30 text-blue-300'
                         }`}
-                      />
+                      >
+                        {student.rank}
+                      </div>
+                      {index < 3 && (
+                        <Medal
+                          className={`w-5 h-5 ${
+                            index === 0
+                              ? 'text-yellow-400'
+                              : index === 1
+                              ? 'text-gray-400'
+                              : 'text-orange-400'
+                          }`}
+                        />
+                      )}
                     </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Attendance</span>
-                        <span className="text-green-400 font-bold">
-                          {student.attendancePercentage}%
+                    <p className="text-white font-bold text-sm mb-1 truncate">{student.name}</p>
+                    <p className="text-white/50 text-xs mb-3 font-mono">{student.rollNo}</p>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">Total Score</span>
+                        <span className="text-green-400 font-bold text-base">
+                          {student.totalScore}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Days Present</span>
-                        <span className="text-white">{student.presentDays}/{student.totalDays}</span>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/60">Attendance</span>
+                        <span className="text-white/80">{student.attendanceMarks}</span>
                       </div>
                     </div>
                   </div>
@@ -379,163 +499,186 @@ export default function RankingsContent() {
               </div>
             </div>
 
-            {/* Full Ranking Table */}
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-6">Full Rankings</h2>
-              <div className="glass-effect-strong rounded-2xl border border-white/15 p-6 overflow-x-auto">
+            {/* Controls Bar */}
+            <div className="mb-6 flex flex-wrap items-center gap-4">
+              <button
+                onClick={() => setShowTaskDialog(true)}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Add Task Column
+              </button>
+
+              <button
+                onClick={handleSaveAllMarks}
+                disabled={saving}
+                className="px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <Save className="w-5 h-5" />
+                {saving ? 'Saving...' : 'Save All Marks'}
+              </button>
+
+              <label className="flex items-center gap-2 cursor-pointer text-white/70 hover:text-white transition-colors">
+                <input
+                  type="checkbox"
+                  checked={autoFullMarks}
+                  onChange={(e) => setAutoFullMarks(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/30 bg-white/10"
+                />
+                <span className="text-sm">Enable double-click auto-fill</span>
+              </label>
+
+              {selectedStudents.size > 0 && (
+                <button
+                  onClick={handleBulkGiveFullMarks}
+                  className="ml-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                >
+                  <Award className="w-5 h-5" />
+                  Give Full Marks to {selectedStudents.size} Selected
+                </button>
+              )}
+            </div>
+
+            {/* Legend */}
+            <div className="mb-6 glass-effect-strong border border-white/10 rounded-lg p-4">
+              <p className="text-white/60 text-sm">
+                <span className="font-semibold text-white">Legend:</span> Attendance Marks =
+                Present Days (1 per day) • Task Marks = Editable (0-max) • Double-click to
+                auto-fill • Select students for bulk operations • Total Score = Attendance +
+                Tasks + Bonus
+              </p>
+            </div>
+
+            {/* Excel-like Table */}
+            <div className="glass-effect-strong rounded-xl border border-white/15 overflow-hidden">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-white/20">
-                    <tr>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Rank</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Name</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Roll No</th>
-                      <th className="text-center py-3 px-4 text-white/70 font-semibold">
-                        Present Days
+                  <thead className="bg-white/5 sticky top-0 z-10">
+                    <tr className="border-b border-white/20">
+                      <th className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={() => {
+                            if (allSelected) {
+                              setSelectedStudents(new Set());
+                            } else {
+                              setSelectedStudents(new Set(students.map((s) => s.rollNo)));
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-white/30 bg-white/10"
+                        />
                       </th>
-                      <th className="text-center py-3 px-4 text-white/70 font-semibold">Total Days</th>
-                      <th className="text-center py-3 px-4 text-white/70 font-semibold">
-                        % Attendance
+                      <th className="py-3 px-4 text-left text-white/70 font-semibold whitespace-nowrap">
+                        Rank
+                      </th>
+                      <th className="py-3 px-4 text-left text-white/70 font-semibold whitespace-nowrap min-w-[200px]">
+                        Student Name
+                      </th>
+                      <th className="py-3 px-4 text-left text-white/70 font-semibold whitespace-nowrap">
+                        Roll No
+                      </th>
+                      <th className="py-3 px-4 text-center text-green-400 font-semibold whitespace-nowrap">
+                        Attendance Marks
+                      </th>
+                      {tasks.map((task) => (
+                        <th
+                          key={task.id}
+                          className="py-3 px-4 text-center text-blue-400 font-semibold whitespace-nowrap min-w-[140px]"
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="truncate max-w-[100px]" title={task.title}>
+                              {task.title}
+                            </span>
+                            <span className="text-white/50 text-xs">/{task.maxMarks}</span>
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                              title="Delete task"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-400" />
+                            </button>
+                          </div>
+                        </th>
+                      ))}
+                      <th className="py-3 px-4 text-center text-yellow-400 font-semibold whitespace-nowrap">
+                        Bonus Marks
+                      </th>
+                      <th className="py-3 px-4 text-center text-purple-400 font-semibold whitespace-nowrap min-w-[120px]">
+                        Total Score
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {attendanceRankings.map((student, idx) => (
-                      <tr key={student.rollNo} className="border-b border-white/5 hover:bg-white/5">
+                    {students.map((student) => (
+                      <tr
+                        key={student.rollNo}
+                        className={`border-b border-white/5 hover:bg-white/5 transition-colors ${
+                          selectedStudents.has(student.rollNo) ? 'bg-blue-500/10' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.has(student.rollNo)}
+                            onChange={() => toggleStudentSelection(student.rollNo)}
+                            className="w-4 h-4 rounded border-white/30 bg-white/10"
+                          />
+                        </td>
                         <td className="py-3 px-4">
-                          <span className="inline-block w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold">
+                          <span
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-xs ${
+                              student.rank <= 3
+                                ? student.rank === 1
+                                  ? 'bg-yellow-500/30 text-yellow-300'
+                                  : student.rank === 2
+                                  ? 'bg-gray-400/30 text-gray-300'
+                                  : 'bg-orange-500/30 text-orange-300'
+                                : 'bg-blue-500/20 text-blue-300'
+                            }`}
+                          >
                             {student.rank}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-white font-medium">{student.name}</td>
-                        <td className="py-3 px-4 text-white/70 font-mono">{student.rollNo}</td>
-                        <td className="py-3 px-4 text-center text-green-400 font-medium">
-                          {student.presentDays}
+                        <td className="py-3 px-4 text-white/70 font-mono text-xs">
+                          {student.rollNo}
                         </td>
-                        <td className="py-3 px-4 text-center text-white/70">{student.totalDays}</td>
                         <td className="py-3 px-4 text-center">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full font-bold text-xs ${
-                              student.attendancePercentage >= 80
-                                ? 'bg-green-500/20 text-green-300'
-                                : student.attendancePercentage >= 60
-                                ? 'bg-yellow-500/20 text-yellow-300'
-                                : 'bg-red-500/20 text-red-300'
-                            }`}
-                          >
-                            {student.attendancePercentage}%
+                          <span className="text-green-400 font-semibold">
+                            {student.attendanceMarks}
+                          </span>
+                          <span className="text-white/40 text-xs ml-1">
+                            ({student.presentDays}/{student.totalDays})
                           </span>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // TEAM RANKING TAB
-          <div>
-            {/* Top 5 Teams Cards */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">Top Teams</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {topTeams.map((team, index) => (
-                  <div
-                    key={team.teamId}
-                    className={`glass-effect-strong rounded-2xl border p-6 cursor-pointer hover:border-blue-400/50 transition-all ${
-                      index === 0
-                        ? 'border-yellow-400/30 bg-yellow-950/20'
-                        : index === 1
-                        ? 'border-gray-400/30 bg-gray-950/20'
-                        : index === 2
-                        ? 'border-orange-400/30 bg-orange-950/20'
-                        : 'border-white/15'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                              index === 0
-                                ? 'bg-yellow-500/30 text-yellow-300'
-                                : index === 1
-                                ? 'bg-gray-500/30 text-gray-300'
-                                : index === 2
-                                ? 'bg-orange-500/30 text-orange-300'
-                                : 'bg-blue-500/30 text-blue-300'
-                            }`}
-                          >
-                            {team.rank}
-                          </div>
-                          <div>
-                            <p className="text-white font-bold">{team.teamName}</p>
-                            <p className="text-white/60 text-sm">Leader: {team.leaderName}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <TrendingUp
-                        className={`w-6 h-6 ${
-                          index === 0
-                            ? 'text-yellow-400'
-                            : index === 1
-                            ? 'text-gray-400'
-                            : index === 2
-                            ? 'text-orange-400'
-                            : 'text-white/40'
-                        }`}
-                      />
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Total Points</span>
-                        <span className="text-green-400 font-bold text-lg">{team.totalPoints}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Tasks Completed</span>
-                        <span className="text-white">{team.taskCount}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Full Team Rankings Table */}
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-6">All Teams</h2>
-              <div className="glass-effect-strong rounded-2xl border border-white/15 p-6 overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-white/20">
-                    <tr>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Rank</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Team Name</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Leader</th>
-                      <th className="text-center py-3 px-4 text-white/70 font-semibold">
-                        Tasks
-                      </th>
-                      <th className="text-center py-3 px-4 text-white/70 font-semibold">
-                        Total Points
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamRankings.map((team) => (
-                      <tr key={team.teamId} className="border-b border-white/5 hover:bg-white/5">
-                        <td className="py-3 px-4">
-                          <span className="inline-block w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 flex items-center justify-center font-bold">
-                            {team.rank}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-white font-medium">{team.teamName}</td>
-                        <td className="py-3 px-4 text-white/70">
-                          {team.leaderName}
-                          <span className="text-white/50 text-xs block">({team.leaderRollNo})</span>
-                        </td>
-                        <td className="py-3 px-4 text-center text-white/70">{team.taskCount}</td>
+                        {tasks.map((task) => (
+                          <td key={task.id} className="py-3 px-4 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max={task.maxMarks}
+                              value={student.taskMarks[task.id] ?? 0}
+                              onChange={(e) =>
+                                handleCellChange(student.rollNo, task.id, e.target.value)
+                              }
+                              onDoubleClick={() => handleDoubleClick(student.rollNo, task.id, task.maxMarks)}
+                              className="w-16 px-2 py-1 bg-white/5 border border-white/20 rounded text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </td>
+                        ))}
                         <td className="py-3 px-4 text-center">
-                          <span className="inline-block px-3 py-1 rounded-full font-bold bg-green-500/20 text-green-300">
-                            {team.totalPoints}
+                          <input
+                            type="number"
+                            min="0"
+                            value={student.bonusMarks}
+                            onChange={(e) => handleBonusChange(student.rollNo, e.target.value)}
+                            className="w-16 px-2 py-1 bg-white/5 border border-white/20 rounded text-white text-center focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-block px-3 py-1.5 rounded-lg font-bold text-base bg-purple-500/20 text-purple-300">
+                            {student.totalScore}
                           </span>
                         </td>
                       </tr>
@@ -543,16 +686,72 @@ export default function RankingsContent() {
                   </tbody>
                 </table>
 
-                {teamRankings.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-white/60">No teams created yet</p>
+                {students.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-white/60">No student data available</p>
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
+
+      {/* Add Task Dialog */}
+      {showTaskDialog && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="glass-effect-strong border border-white/20 rounded-2xl p-6 max-w-md w-full">
+            <h3 className="text-2xl font-bold text-white mb-6">Add New Task Column</h3>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-white/70 text-sm font-medium mb-2">
+                  Task Title
+                </label>
+                <input
+                  type="text"
+                  value={taskForm.title}
+                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  placeholder="e.g., Assignment 1, Quiz 2"
+                  className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/70 text-sm font-medium mb-2">
+                  Maximum Marks
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={taskForm.maxMarks}
+                  onChange={(e) =>
+                    setTaskForm({ ...taskForm, maxMarks: parseInt(e.target.value) || 0 })
+                  }
+                  placeholder="e.g., 10, 20, 100"
+                  className="w-full px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowTaskDialog(false)}
+                className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTask}
+                disabled={!taskForm.title.trim() || taskForm.maxMarks <= 0}
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+              >
+                Add Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

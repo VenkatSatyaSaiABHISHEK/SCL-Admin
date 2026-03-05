@@ -30,7 +30,7 @@ export default function AnnouncementsContent() {
     const loadAnnouncements = async () => {
       try {
         setLoading(true);
-        const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'));
+        const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const announceList = querySnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -39,6 +39,18 @@ export default function AnnouncementsContent() {
         setAnnouncements(announceList);
       } catch (error) {
         console.error('Error loading announcements:', error);
+        // Fallback to timestamp field if createdAt doesn't exist
+        try {
+          const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'));
+          const querySnapshot = await getDocs(q);
+          const announceList = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setAnnouncements(announceList);
+        } catch (fallbackError) {
+          console.error('Error loading announcements with fallback:', fallbackError);
+        }
       } finally {
         setLoading(false);
       }
@@ -66,8 +78,10 @@ export default function AnnouncementsContent() {
     try {
       const newAnnouncement = {
         title,
-        message,
-        timestamp: new Date(),
+        content: message, // Changed from 'message' to 'content' for PWA compatibility
+        message, // Keep for backward compatibility
+        createdAt: new Date(), // Changed from 'timestamp' to 'createdAt' for PWA
+        timestamp: new Date(), // Keep for backward compatibility
         createdBy: currentUser?.email || 'admin',
       };
 
@@ -192,9 +206,9 @@ export default function AnnouncementsContent() {
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-white mb-2">{ann.title}</h3>
-                    <p className="text-white/70 mb-3">{ann.message}</p>
+                    <p className="text-white/70 mb-3">{ann.content || ann.message}</p>
                     <p className="text-white/50 text-sm">
-                      Posted on {ann.timestamp?.toDate?.()?.toLocaleDateString() || 'N/A'}
+                      Posted on {(ann.createdAt || ann.timestamp)?.toDate?.()?.toLocaleDateString() || 'N/A'}
                     </p>
                   </div>
                   <button

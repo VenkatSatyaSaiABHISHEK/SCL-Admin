@@ -1,11 +1,6 @@
 ﻿'use client';
 
-import dynamic from 'next/dynamic';
-
-const ProfileContent = dynamic(
-  () => import('./profile-content'),
-  { ssr: false }
-);
+import ProfileContent from './profile-content';
 
 export default function ProfilePage() {
   return <ProfileContent />;

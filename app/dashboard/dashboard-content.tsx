@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Sun, Moon, LogOut, User, CheckCircle, Users, MessageSquare, BookOpen, Upload, Wifi, FileText, QrCode, Database, Award, TrendingUp, Trash2, UserRound, Activity } from 'lucide-react';
+import { Sun, Moon, LogOut, User, CheckCircle, Users, MessageSquare, BookOpen, Upload, Wifi, FileText, MapPin, Database, Award, TrendingUp, Trash2, UserRound, Activity, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { getStatistics } from '@/lib/api';
 import StorageUsageCard from '@/components/StorageUsageCard';
@@ -267,7 +267,7 @@ export default function DashboardContent() {
               <CheckCircle className="w-6 h-6 text-blue-400" />
             </div>
             <h3 className="text-lg font-bold text-white mb-1">Mark Attendance</h3>
-            <p className="text-white/60 text-sm">Scan student QR codes</p>
+            <p className="text-white/60 text-sm">Location-based attendance</p>
           </Link>
 
           <Link href="/attendance-reports" className="glass-effect-strong rounded-2xl border border-white/15 p-6 hover:border-purple-500/30 transition-all cursor-pointer hover:-translate-y-1">
@@ -294,12 +294,12 @@ export default function DashboardContent() {
             <p className="text-white/60 text-sm">View all students data</p>
           </Link>
 
-          <Link href="/qr-generator" className="glass-effect-strong rounded-2xl border border-white/15 p-6 hover:border-yellow-500/30 transition-all cursor-pointer hover:-translate-y-1">
+          <Link href="/attendance-session" className="glass-effect-strong rounded-2xl border border-white/15 p-6 hover:border-yellow-500/30 transition-all cursor-pointer hover:-translate-y-1">
             <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-orange-600/20 rounded-xl flex items-center justify-center mb-4">
-              <QrCode className="w-6 h-6 text-yellow-400" />
+              <MapPin className="w-6 h-6 text-yellow-400" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-1">QR Generator</h3>
-            <p className="text-white/60 text-sm">Test QR codes</p>
+            <h3 className="text-lg font-bold text-white mb-1">Session Control</h3>
+            <p className="text-white/60 text-sm">Manage attendance sessions</p>
           </Link>
 
           <Link href="/rankings" className="glass-effect-strong rounded-2xl border border-white/15 p-6 hover:border-amber-500/30 transition-all cursor-pointer hover:-translate-y-1">
@@ -372,6 +372,14 @@ export default function DashboardContent() {
             </div>
             <h3 className="text-lg font-bold text-white mb-1">System Monitor</h3>
             <p className="text-white/60 text-sm">Backend health & real-time logs</p>
+          </Link>
+
+          <Link href="/pwa-info" className="glass-effect-strong rounded-2xl border border-white/15 p-6 hover:border-cyan-500/30 transition-all cursor-pointer hover:-translate-y-1">
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl flex items-center justify-center mb-4">
+              <Smartphone className="w-6 h-6 text-cyan-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">PWA Management</h3>
+            <p className="text-white/60 text-sm">Share & monitor student app</p>
           </Link>
 
           <StorageUsageCard />

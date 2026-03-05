@@ -1,12 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import AdminGuard from '@/components/AdminGuard';
-
-const SyllabusContent = dynamic(
-  () => import('./syllabus-content'),
-  { ssr: false }
-);
+import SyllabusContent from './syllabus-content';
 
 export default function SyllabusPage() {
   return (

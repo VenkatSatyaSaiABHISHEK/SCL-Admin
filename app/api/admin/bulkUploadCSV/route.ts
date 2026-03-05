@@ -1,21 +1,17 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Initialize Firebase Admin SDK
-let adminApp: ReturnType<typeof initializeApp> | null = null;
-try {
+if (!getApps().length) {
   const serviceAccountKey = process.env.FIREBASE_ADMIN_SDK_KEY;
   if (!serviceAccountKey) {
     throw new Error('FIREBASE_ADMIN_SDK_KEY environment variable is not set');
   }
-  const serviceAccount = JSON.parse(serviceAccountKey);
-  adminApp = initializeApp({
-    credential: cert(serviceAccount as any),
+  initializeApp({
+    credential: cert(JSON.parse(serviceAccountKey)),
   });
-} catch (error) {
-  // App already initialized
 }
 
 const auth = getAuth();
@@ -175,23 +171,25 @@ export async function POST(request: NextRequest) {
           email,
           name,
           role: 'student',
-          createdAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
           rollNo,
         });
 
-        // Create student document using UID
+        // Create student document using Firebase UID as document ID
+        // FORCE role to 'student' even if CSV contains different value
         await db.collection('students').doc(uid).set({
           uid,
           name,
           rollNo,
           email,
+          role: 'student', // ALWAYS force to 'student'
           year: student.year?.toString() || '',
           branch: student.branch?.toString() || '',
           phoneNo: student.phoneno?.toString() || student.phoneNo?.toString() || '',
           linkedin: student.linkedin?.toString() || '',
           github: student.github?.toString() || '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
 
         results.push({

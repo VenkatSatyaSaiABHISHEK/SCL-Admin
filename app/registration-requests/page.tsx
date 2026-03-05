@@ -1,11 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const RegistrationRequestsContent = dynamic(
-  () => import('./registration-requests-content'),
-  { ssr: false }
-);
+import RegistrationRequestsContent from './registration-requests-content';
 
 export default function RegistrationRequestsPage() {
   return <RegistrationRequestsContent />;

@@ -1,0 +1,5 @@
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#3b82f6"/>
+  <circle cx="72" cy="72" r="36" fill="white"/>
+  <text x="72" y="82" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#3b82f6" text-anchor="middle">SCL</text>
+</svg>

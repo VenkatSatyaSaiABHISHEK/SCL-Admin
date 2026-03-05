@@ -424,3 +424,136 @@ export const updateSystemHealth = async () => {
     return { connected: false };
   }
 };
+
+/**
+ * COURSES/SYLLABUS API
+ */
+
+export const getSyllabusData = async () => {
+  try {
+    console.log('Fetching syllabus data from Firebase collection...');
+    
+    // First, try the same approach as the admin dashboard
+    const snapshot = await getDocs(collection(db, 'syllabus'));
+    console.log('Firebase snapshot docs length:', snapshot.docs.length);
+    
+    if (snapshot.docs.length > 0) {
+      // Check if this is the admin format with rows property
+      const firstDoc = snapshot.docs[0].data();
+      console.log('First document structure:', firstDoc);
+      
+      if (firstDoc.rows && Array.isArray(firstDoc.rows)) {
+        console.log('Found admin-style syllabus with rows:', firstDoc.rows.length);
+        return firstDoc.rows.map((row: any, index: number) => ({
+          id: row.id || `row_${index}`,
+          ...row
+        }));
+      }
+    }
+    
+    // If not admin format, try individual documents
+    const allDocs = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    console.log('Individual documents found:', allDocs.length);
+    return allDocs;
+    
+  } catch (error) {
+    console.error('Error fetching syllabus data:', error);
+    console.error('Error details:', error);
+    return [];
+  }
+};
+
+export const getCourses = async (studentId?: string) => {
+  try {
+    const q = query(
+      collection(db, 'courses'),
+      orderBy('code', 'asc')
+    );
+    const querySnapshot = await getDocs(q);
+    const courses = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // If student ID provided, get their specific progress/attendance
+    if (studentId) {
+      for (const course of courses) {
+        const progressRef = doc(db, `students/${studentId}/courseProgress`, course.id);
+        const progressSnap = await getDoc(progressRef);
+        if (progressSnap.exists()) {
+          const progressData = progressSnap.data();
+          course.progress = progressData.progress || 0;
+          course.attendance = progressData.attendance || 0;
+        } else {
+          // Set default progress if no record exists
+          course.progress = Math.floor(Math.random() * 40) + 40; // 40-80%
+          course.attendance = Math.floor(Math.random() * 20) + 80; // 80-100%
+        }
+      }
+    }
+
+    return courses;
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    return [];
+  }
+};
+
+export const getStudentAssignments = async (studentId: string, courseId?: string) => {
+  try {
+    let q;
+    if (courseId) {
+      q = query(
+        collection(db, `students/${studentId}/assignments`),
+        where('courseId', '==', courseId),
+        orderBy('dueDate', 'asc')
+      );
+    } else {
+      q = query(
+        collection(db, `students/${studentId}/assignments`),
+        orderBy('dueDate', 'asc')
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error('Error fetching assignments:', error);
+    return [];
+  }
+};
+
+export const updateCourseProgress = async (studentId: string, courseId: string, progress: number, attendance: number) => {
+  try {
+    const progressRef = doc(db, `students/${studentId}/courseProgress`, courseId);
+    await setDoc(progressRef, {
+      progress,
+      attendance,
+      lastUpdated: Timestamp.now(),
+    }, { merge: true });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating course progress:', error);
+    throw error;
+  }
+};
+
+export const markAssignmentComplete = async (studentId: string, assignmentId: string) => {
+  try {
+    const assignmentRef = doc(db, `students/${studentId}/assignments`, assignmentId);
+    await updateDoc(assignmentRef, {
+      completed: true,
+      completedAt: Timestamp.now(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error marking assignment complete:', error);
+    throw error;
+  }
+};

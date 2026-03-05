@@ -1,11 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const RegistrationControlContent = dynamic(
-  () => import('./registration-control-content'),
-  { ssr: false }
-);
+import RegistrationControlContent from './registration-control-content';
 
 export default function RegistrationControlPage() {
   return <RegistrationControlContent />;

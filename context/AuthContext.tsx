@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, Timestamp, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { writeLog, LOG_ACTIONS } from '@/lib/logging';
 
 interface User {
@@ -11,6 +11,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  rollNo?: string; // For students
   loginTime?: Date;
 }
 
@@ -39,21 +40,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
       try {
         if (user) {
-          // User is logged in - check their role
+          // User is logged in — check users collection first, then students collection
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
 
+          let userData: Record<string, any> | null = null;
+          let source: 'users' | 'students' = 'users';
+
           if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const userRole = userData?.role || 'user';
+            userData = userDocSnap.data();
+          } else {
+            // Not in users — check students collection (PWA students)
+            const studentDocRef = doc(db, 'students', user.uid);
+            const studentDocSnap = await getDoc(studentDocRef);
+            if (studentDocSnap.exists()) {
+              userData = studentDocSnap.data();
+              source = 'students';
+            }
+          }
+
+          if (userData) {
+            const userRole = userData?.role || (source === 'students' ? 'student' : 'user');
             const isAdminUser = userRole === 'admin';
             const isStudentUser = userRole === 'student';
-            
+
+            const rollNo: string | undefined = userData?.rollNo || undefined;
+
             setCurrentUser({
               uid: user.uid,
               email: user.email || '',
               name: userData?.name || user.displayName || 'User',
               role: userRole,
+              rollNo,
               loginTime: userData?.loginTime?.toDate?.() || new Date(),
             });
             setIsAdmin(isAdminUser);
@@ -61,21 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Update last seen every 30 seconds
             if (sessionUpdateInterval) clearInterval(sessionUpdateInterval);
-            
             sessionUpdateInterval = setInterval(async () => {
               try {
                 const sessionRef = doc(db, 'activeSessions', user.uid);
-                await updateDoc(sessionRef, {
-                  lastSeen: Timestamp.now(),
-                });
-              } catch (error) {
+                await updateDoc(sessionRef, { lastSeen: Timestamp.now() });
+              } catch (_) {
                 // Session may have been deleted
               }
-            }, 30000); // Every 30 seconds
+            }, 30000);
 
           } else {
-            // User doc missing
-            console.error('User document not found in Firestore. UID:', user.uid);
+            // Not found in either collection
+            console.error('User document not found in users or students. UID:', user.uid);
             setCurrentUser(null);
             setIsAdmin(false);
             setIsStudent(false);
@@ -115,11 +130,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check user role in Firestore
+      // Check users collection first, then students collection
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
-      if (!userDocSnap.exists()) {
+      let userData: Record<string, any> | null = null;
+      let source: 'users' | 'students' = 'users';
+
+      if (userDocSnap.exists()) {
+        userData = userDocSnap.data();
+      } else {
+        // Not an admin/teacher — check students collection
+        const studentDocRef = doc(db, 'students', user.uid);
+        const studentDocSnap = await getDoc(studentDocRef);
+        if (studentDocSnap.exists()) {
+          userData = studentDocSnap.data();
+          source = 'students';
+        }
+      }
+
+      if (!userData) {
         await signOut(auth);
         await writeLog({
           timestamp: new Date(),
@@ -127,13 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: user.email || '',
           role: 'unknown',
           action: LOG_ACTIONS.LOGIN_FAILED,
-          message: 'User profile missing in Firestore',
+          message: 'User profile missing in both users and students collections',
         });
-        throw new Error('User profile missing in Firestore users collection');
+        throw new Error('Account not found. Please contact admin.');
       }
 
-      const userData = userDocSnap.data();
-      const userRole = userData?.role;
+      const userRole = userData?.role || (source === 'students' ? 'student' : 'user');
 
       // Create or update active session
       try {
@@ -171,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: user.email || '',
         name: userData?.name || user.displayName || 'User',
         role: userRole,
+        rollNo: userData?.rollNo || undefined,
         loginTime: new Date(),
       });
       setIsAdmin(userRole === 'admin');

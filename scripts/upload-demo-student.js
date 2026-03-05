@@ -23,7 +23,6 @@ async function uploadStudent() {
     github: '',
     username: '23B21A4565',
     passwordHash: Buffer.from('ySRpaXUc').toString('base64'),
-    qrId: 'QR-19c0c7bc09f-uz8n4css',
     createdAt: admin.firestore.Timestamp.now(),
   };
 
@@ -33,7 +32,6 @@ async function uploadStudent() {
     console.log('Roll No: 23B21A4565');
     console.log('Username: 23B21A4565');
     console.log('Password: ySRpaXUc');
-    console.log('QR ID:', student.qrId);
   } catch (error) {
     console.error('❌ Error uploading student:', error);
   } finally {

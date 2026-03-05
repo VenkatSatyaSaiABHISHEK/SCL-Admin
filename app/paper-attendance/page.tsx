@@ -1,12 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import AdminGuard from '@/components/AdminGuard';
-
-const PaperAttendanceContent = dynamic(
-  () => import('./paper-attendance-content'),
-  { ssr: false }
-);
+import PaperAttendanceContent from './paper-attendance-content';
 
 export default function PaperAttendancePage() {
   return (

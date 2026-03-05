@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, User, Download, Calendar, Save } from 'lucide-react';
+import { LogOut, User, Download, Calendar, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import { db } from '@/lib/firebase';
@@ -43,6 +43,7 @@ export default function AttendanceReportsContent() {
   const [view, setView] = useState<'daily' | 'student'>('daily');
   const [marks, setMarks] = useState<{ [key: string]: number }>({});
   const [savingMarks, setSavingMarks] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     setMounted(true);
@@ -191,6 +192,26 @@ export default function AttendanceReportsContent() {
     a.click();
   };
 
+  const toggleRowExpansion = (date: string) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
+
+  const getStudentInitials = (name: string) => {
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[1][0];
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getStudentName = (rollNo: string) => {
+    const student = allStudents.find(s => s.rollNo === rollNo);
+    return student?.name || rollNo;
+  };
+
   if (!mounted || !isAdmin || !currentUser) {
     return <div className="flex items-center justify-center min-h-screen text-white">Loading...</div>;
   }
@@ -226,31 +247,31 @@ export default function AttendanceReportsContent() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Attendance Reports</h1>
-          <p className="text-white/60">View daily attendance or student-wise statistics with marks</p>
+          <h1 className="text-5xl font-extrabold text-white mb-2 tracking-tight">Attendance Reports</h1>
+          <p className="text-base text-white/75">View daily attendance or student-wise statistics with marks</p>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex gap-4 mb-8">
+        {/* View Toggle - Pill Shaped */}
+        <div className="flex gap-2 mb-8 bg-slate-800/60 p-1 rounded-full w-fit backdrop-blur-sm border border-white/15 shadow-lg">
           <button
             onClick={() => setView('daily')}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
+            className={`px-7 py-2 rounded-full font-semibold transition-all duration-200 text-sm ${
               view === 'daily'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-white/70 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
+                : 'text-white/70 hover:text-white hover:bg-white/10'
             }`}
           >
             Daily Records
           </button>
           <button
             onClick={() => setView('student')}
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
+            className={`px-7 py-2 rounded-full font-semibold transition-all duration-200 text-sm ${
               view === 'student'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-white/70 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40'
+                : 'text-white/70 hover:text-white hover:bg-white/10'
             }`}
           >
             Student Statistics
@@ -259,44 +280,157 @@ export default function AttendanceReportsContent() {
 
         {/* Daily Reports View */}
         {view === 'daily' && (
-          <div className="glass-effect-strong rounded-2xl border border-white/15 p-6">
+          <div className="space-y-3.5">
             {loading ? (
-              <div className="text-center py-8 text-white/60">Loading records...</div>
-            ) : records.length === 0 ? (
-              <div className="text-center py-8 text-white/60">No attendance records yet</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-white/20">
-                    <tr>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Date</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Present</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Absent</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Total</th>
-                      <th className="text-left py-3 px-4 text-white/70 font-semibold">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((record, idx) => (
-                      <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
-                        <td className="py-3 px-4 text-white font-medium">{record.date}</td>
-                        <td className="py-3 px-4 text-green-400">{record.presentCount}</td>
-                        <td className="py-3 px-4 text-red-400">{record.absentCount}</td>
-                        <td className="py-3 px-4 text-white">{record.totalCount}</td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => downloadReport(record)}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition text-xs"
-                          >
-                            <Download className="w-4 h-4" />
-                            Download
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="glass-effect-strong rounded-xl border border-white/15 p-6 text-center text-white/60">
+                Loading records...
               </div>
+            ) : records.length === 0 ? (
+              <div className="glass-effect-strong rounded-xl border border-white/15 p-6 text-center text-white/60">
+                No attendance records yet
+              </div>
+            ) : (
+              records.map((record, idx) => (
+                <div 
+                  key={idx} 
+                  className="glass-effect-strong rounded-xl border border-white/15 overflow-hidden hover:border-white/25 transition-all duration-200 hover:shadow-2xl shadow-lg"
+                >
+                  {/* Card Header */}
+                  <div className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      {/* Date and Badges */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+                        <h3 className="text-lg font-bold text-white min-w-[110px]">{record.date}</h3>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 bg-emerald-500/25 text-emerald-300 rounded-full text-xs font-bold border border-emerald-400/40">
+                            {record.presentCount} Present
+                          </span>
+                          <span className="px-2.5 py-1 bg-rose-500/25 text-rose-300 rounded-full text-xs font-bold border border-rose-400/40">
+                            {record.absentCount} Absent
+                          </span>
+                          <span className="px-2.5 py-1 bg-sky-500/25 text-sky-300 rounded-full text-xs font-bold border border-sky-400/40">
+                            {record.totalCount} Total
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => downloadReport(record)}
+                          className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg transition-all duration-200 text-xs font-semibold shadow-md shadow-blue-600/30 hover:shadow-blue-600/50"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download
+                        </button>
+                        <button
+                          onClick={() => toggleRowExpansion(record.date)}
+                          className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-1.5 rounded-lg transition-all duration-200 text-xs font-semibold"
+                        >
+                          {expandedRows[record.date] ? (
+                            <>
+                              <ChevronUp className="w-3.5 h-3.5" />
+                              Hide
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3.5 h-3.5" />
+                              View
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expandable Student List */}
+                  {expandedRows[record.date] && (
+                    <div className="border-t border-white/10 bg-black/20 p-4 animate-in slide-in-from-top duration-200">
+                      {/* All Present Message */}
+                      {record.absentCount === 0 && record.presentCount > 0 && (
+                        <div className="mb-3.5 p-3 bg-emerald-50/95 border-l-4 border-emerald-500 rounded-lg shadow-sm flex items-center gap-2.5">
+                          <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <p className="text-emerald-800 font-semibold text-sm">
+                            All students are present today!
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Present Students */}
+                      {record.presentStudents && record.presentStudents.length > 0 && (
+                        <div className={record.absentStudents && record.absentStudents.length > 0 ? "mb-4" : ""}>
+                          <h4 className="text-white/90 font-bold mb-2.5 text-xs uppercase tracking-wider flex items-center gap-2">
+                            <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            Present Students ({record.presentCount})
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {record.presentStudents.map((rollNo, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-3 bg-emerald-500/10 hover:bg-emerald-500/20 p-3 rounded-xl border border-emerald-500/30 transition-all duration-150 hover:shadow-md hover:shadow-emerald-500/20 shadow-sm cursor-pointer"
+                              >
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+                                  {getStudentInitials(getStudentName(rollNo))}
+                                </div>
+                                {/* Student Info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white font-semibold truncate text-sm leading-tight">
+                                    {getStudentName(rollNo)}
+                                  </p>
+                                  <p className="text-white/65 text-xs font-mono mt-0.5">{rollNo}</p>
+                                </div>
+                                {/* Status Badge */}
+                                <span className="w-6 h-6 bg-emerald-500 text-white rounded-lg text-sm font-bold flex-shrink-0 shadow-sm flex items-center justify-center">
+                                  ✓
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Absent Students */}
+                      {record.absentStudents && record.absentStudents.length > 0 && (
+                        <div>
+                          <h4 className="text-white/90 font-bold mb-2.5 text-xs uppercase tracking-wider flex items-center gap-2">
+                            <span className="w-2 h-2 bg-rose-400 rounded-full"></span>
+                            Absent Students ({record.absentCount})
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {record.absentStudents.map((rollNo, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center gap-3 bg-rose-500/10 hover:bg-rose-500/20 p-3 rounded-xl border border-rose-500/30 transition-all duration-150 hover:shadow-md hover:shadow-rose-500/20 shadow-sm cursor-pointer"
+                              >
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-md">
+                                  {getStudentInitials(getStudentName(rollNo))}
+                                </div>
+                                {/* Student Info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white font-semibold truncate text-sm leading-tight">
+                                    {getStudentName(rollNo)}
+                                  </p>
+                                  <p className="text-white/65 text-xs font-mono mt-0.5">{rollNo}</p>
+                                </div>
+                                {/* Status Badge */}
+                                <span className="w-6 h-6 bg-rose-500 text-white rounded-lg text-sm font-bold flex-shrink-0 shadow-sm flex items-center justify-center">
+                                  ✗
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
             )}
           </div>
         )}
@@ -311,26 +445,38 @@ export default function AttendanceReportsContent() {
             ) : (
               <>
                 <div className="overflow-x-auto mb-6">
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-white/20">
+                  <table className="w-full">
+                    <thead className="border-b-2 border-white/20">
                       <tr>
-                        <th className="text-left py-3 px-4 text-white/70 font-semibold">Roll No</th>
-                        <th className="text-left py-3 px-4 text-white/70 font-semibold">Name</th>
-                        <th className="text-center py-3 px-4 text-white/70 font-semibold">Present</th>
-                        <th className="text-center py-3 px-4 text-white/70 font-semibold">Absent</th>
-                        <th className="text-center py-3 px-4 text-white/70 font-semibold">Total</th>
-                        <th className="text-center py-3 px-4 text-white/70 font-semibold">Marks</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Roll No</th>
+                        <th className="text-left py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Name</th>
+                        <th className="text-center py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Present</th>
+                        <th className="text-center py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Absent</th>
+                        <th className="text-center py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Total</th>
+                        <th className="text-center py-4 px-4 text-white/80 font-bold text-sm uppercase tracking-wider">Marks</th>
                       </tr>
                     </thead>
                     <tbody>
                       {studentStats.map((student, idx) => (
-                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5">
-                          <td className="py-3 px-4 text-white font-mono">{student.rollNo}</td>
-                          <td className="py-3 px-4 text-white">{student.name}</td>
-                          <td className="py-3 px-4 text-center text-green-400 font-semibold">{student.daysPresent}</td>
-                          <td className="py-3 px-4 text-center text-red-400 font-semibold">{student.daysAbsent}</td>
-                          <td className="py-3 px-4 text-center text-white">{student.daysPresent + student.daysAbsent}</td>
-                          <td className="py-3 px-4">
+                        <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors duration-150">
+                          <td className="py-4 px-4 text-white font-mono font-semibold">{student.rollNo}</td>
+                          <td className="py-4 px-4 text-white font-medium">{student.name}</td>
+                          <td className="py-4 px-4 text-center">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 bg-emerald-500/25 text-emerald-300 rounded-full text-sm font-bold border border-emerald-400/30">
+                              {student.daysPresent}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 bg-rose-500/25 text-rose-300 rounded-full text-sm font-bold border border-rose-400/30">
+                              {student.daysAbsent}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 bg-sky-500/25 text-sky-300 rounded-full text-sm font-bold border border-sky-400/30">
+                              {student.daysPresent + student.daysAbsent}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 flex justify-center">
                             <input
                               type="number"
                               min="0"
@@ -343,8 +489,8 @@ export default function AttendanceReportsContent() {
                                   [student.rollNo]: value || 0,
                                 });
                               }}
-                              placeholder="Add marks"
-                              className="w-20 bg-slate-600 text-white text-center px-2 py-1 rounded border border-white/20 focus:border-blue-500 focus:outline-none"
+                              placeholder="0"
+                              className="w-20 bg-slate-700 text-white text-center px-3 py-2 rounded-lg border border-white/20 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all font-semibold"
                             />
                           </td>
                         </tr>
@@ -353,10 +499,10 @@ export default function AttendanceReportsContent() {
                   </table>
                 </div>
 
-                <div className="flex gap-4 justify-end">
+                <div className="flex flex-col sm:flex-row gap-3 justify-end">
                   <button
                     onClick={downloadStudentReport}
-                    className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg transition font-semibold"
+                    className="flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/40"
                   >
                     <Download className="w-5 h-5" />
                     Download Report
@@ -364,7 +510,7 @@ export default function AttendanceReportsContent() {
                   <button
                     onClick={saveMarks}
                     disabled={savingMarks}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition font-semibold"
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg shadow-green-600/20 hover:shadow-green-600/40"
                   >
                     {savingMarks ? (
                       <>

@@ -1,21 +1,17 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Initialize Firebase Admin SDK
-let adminApp: ReturnType<typeof initializeApp> | null = null;
-try {
+if (!getApps().length) {
   const serviceAccountKey = process.env.FIREBASE_ADMIN_SDK_KEY;
   if (!serviceAccountKey) {
     throw new Error('FIREBASE_ADMIN_SDK_KEY environment variable is not set');
   }
-  const serviceAccount = JSON.parse(serviceAccountKey);
-  adminApp = initializeApp({
-    credential: cert(serviceAccount as any),
+  initializeApp({
+    credential: cert(JSON.parse(serviceAccountKey)),
   });
-} catch (error) {
-  // App already initialized
 }
 
 const auth = getAuth();
@@ -122,11 +118,12 @@ export async function POST(request: NextRequest) {
       email: body.email,
       name: body.name,
       role: 'student',
-      createdAt: new Date(),
+      createdAt: FieldValue.serverTimestamp(),
       rollNo: body.rollNo,
     });
 
-    // Create student document using UID as document ID
+    // Create student document using Firebase UID as document ID
+    // FORCE role to 'student' regardless of any input
     await db.collection('students').doc(uid).set({
       uid,
       name: body.name,
@@ -138,8 +135,9 @@ export async function POST(request: NextRequest) {
       linkedin: body.linkedin || '',
       github: body.github || '',
       password: body.password,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      role: 'student', // ALWAYS force to 'student'
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json(
