@@ -273,7 +273,7 @@ export default function RankingsContent() {
                           <div
                             key={entry.rank}
                             className={`
-                              relative ${bgColor} border-2 ${borderColor} rounded-2xl p-5 shadow-lg
+                              relative ${bgColor} border-2 ${borderColor} rounded-2xl p-4 shadow-lg h-full flex flex-col
                               transition-all hover:shadow-xl hover:-translate-y-1
                               ${isCurrentUser ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
                             `}
@@ -288,29 +288,31 @@ export default function RankingsContent() {
                             )}
 
                             {/* Trophy Icon & Rank */}
-                            <div className="text-center mb-3">
-                              <div className="flex justify-center mb-2">
-                                <TrophyIcon className={`w-10 h-10 ${iconColor}`} strokeWidth={2.5} />
+                            <div className="text-center mb-2">
+                              <div className="flex justify-center mb-1.5">
+                                <TrophyIcon className={`w-9 h-9 ${iconColor}`} strokeWidth={2.5} />
                               </div>
-                              <div className={`inline-block ${rankBg} ${textColor} text-xl font-bold px-3 py-1 rounded-lg`}>
+                              <div className={`inline-block ${rankBg} ${textColor} text-lg font-bold px-2.5 py-0.5 rounded-lg`}>
                                 #{entry.rank}
                               </div>
                             </div>
 
                             {/* Avatar */}
-                            <div className="flex justify-center mb-3">
-                              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-md">
+                            <div className="flex justify-center mb-2">
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-base font-bold shadow-md">
                                 {entry.name.charAt(0).toUpperCase()}
                               </div>
                             </div>
 
-                            {/* Student Name - Multi-line with word wrap */}
-                            <h3 className="text-center font-bold text-gray-900 mb-3 text-sm leading-tight min-h-[2.5rem] px-1" title={entry.name}>
-                              {entry.name}
-                            </h3>
+                            {/* Student Name - Fixed height with line clamp */}
+                            <div className="mb-2 h-10 flex items-center justify-center">
+                              <h3 className="text-center font-bold text-gray-900 text-xs leading-tight line-clamp-2 px-1" title={entry.name}>
+                                {entry.name}
+                              </h3>
+                            </div>
 
                             {/* Performance Summary */}
-                            <div className="bg-white/70 rounded-lg p-2.5 mb-3 space-y-1">
+                            <div className="bg-white/70 rounded-lg p-2 mb-2 space-y-1">
                               <div className="flex justify-between text-xs">
                                 <span className="text-gray-600">Attendance:</span>
                                 <span className="font-bold text-green-600">{entry.attendanceMarks}</span>
@@ -328,8 +330,8 @@ export default function RankingsContent() {
                             </div>
 
                             {/* Total Points */}
-                            <div className="text-center">
-                              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-2 rounded-full font-bold shadow-lg">
+                            <div className="text-center mt-auto">
+                              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-1.5 rounded-full font-bold shadow-lg">
                                 <span className="text-base">{entry.totalScore}</span>
                                 <span className="text-xs">pts</span>
                               </div>
