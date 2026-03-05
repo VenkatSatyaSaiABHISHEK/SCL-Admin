@@ -12,7 +12,7 @@ const urlsToCache = [
   '/icon-144x144.svg'
 ];
 
-// Install event - cache important resources and skip waiting
+// Install event - cache important resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -20,7 +20,6 @@ self.addEventListener('install', (event) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting()) // Activate immediately
   );
 });
 
@@ -184,20 +183,12 @@ async function handleOfflineAttendance() {
   }
 }
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+// Message event - handle messages from clients
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Skipping waiting and activating new service worker');
+    self.skipWaiting();
+  }
 });
 
 console.log('SCL Service Worker loaded and ready for PWA features');
