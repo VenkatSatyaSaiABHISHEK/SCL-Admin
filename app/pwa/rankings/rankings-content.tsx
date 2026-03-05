@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { Trophy, Award, Medal, Users, BarChart3, Lightbulb } from 'lucide-react';
 
 interface RankingData {
   rollNo: string;
@@ -233,28 +234,32 @@ export default function RankingsContent() {
                 {rankings.length >= 1 && (
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Performers</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       {rankings.slice(0, 3).map((entry) => {
                         const isCurrentUser = entry.rollNo === userRanking?.rollNo;
                         
-                        // Trophy and color styling
-                        let trophy = '';
+                        // Trophy icon and color styling
+                        let TrophyIcon = Trophy;
+                        let iconColor = 'text-gray-500';
                         let bgColor = 'bg-white';
                         let borderColor = 'border-gray-200';
                         let textColor = 'text-gray-900';
                         
                         if (entry.rank === 1) {
-                          trophy = '🥇';
+                          TrophyIcon = Trophy;
+                          iconColor = 'text-yellow-500';
                           bgColor = 'bg-gradient-to-br from-yellow-50 to-orange-50';
                           borderColor = 'border-yellow-200';
                           textColor = 'text-yellow-800';
                         } else if (entry.rank === 2) {
-                          trophy = '🥈';
+                          TrophyIcon = Award;
+                          iconColor = 'text-gray-400';
                           bgColor = 'bg-gradient-to-br from-gray-50 to-slate-50';
                           borderColor = 'border-gray-300';
                           textColor = 'text-gray-700';
                         } else if (entry.rank === 3) {
-                          trophy = '🥉';
+                          TrophyIcon = Medal;
+                          iconColor = 'text-orange-500';
                           bgColor = 'bg-gradient-to-br from-orange-50 to-amber-50';
                           borderColor = 'border-orange-200';
                           textColor = 'text-orange-700';
@@ -278,9 +283,11 @@ export default function RankingsContent() {
                               </div>
                             )}
 
-                            {/* Trophy */}
+                            {/* Trophy Icon */}
                             <div className="text-center mb-4">
-                              <div className="text-5xl mb-2">{trophy}</div>
+                              <div className="flex justify-center mb-2">
+                                <TrophyIcon className={`w-12 h-12 ${iconColor}`} strokeWidth={2.5} />
+                              </div>
                               <div className={`text-2xl font-bold ${textColor}`}>
                                 #{entry.rank}
                               </div>
@@ -403,7 +410,9 @@ export default function RankingsContent() {
               </>
             ) : (
               <div className="bg-white border border-gray-200 rounded-xl text-center py-16 shadow-sm">
-                <div className="text-5xl mb-3">🏆</div>
+                <div className="flex justify-center mb-3">
+                  <Trophy className="w-12 h-12 text-gray-400" />
+                </div>
                 <p className="text-sm text-gray-500">No rankings data available yet</p>
               </div>
             )}
@@ -416,7 +425,7 @@ export default function RankingsContent() {
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md px-5 py-4 text-white">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">👥</span>
+                      <Users className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <h3 className="text-base font-bold">{teamName}</h3>
@@ -525,7 +534,9 @@ export default function RankingsContent() {
               </>
             ) : (
               <div className="bg-white border border-gray-200 rounded-xl text-center py-16 shadow-sm">
-                <div className="text-6xl mb-4">👥</div>
+                <div className="flex justify-center mb-4">
+                  <Users className="w-16 h-16 text-gray-400" />
+                </div>
                 <h3 className="text-base font-semibold text-gray-900 mb-2">No Team Assigned</h3>
                 <p className="text-sm text-gray-500">
                   You haven't been assigned to a team yet. Contact your administrator.
@@ -539,7 +550,7 @@ export default function RankingsContent() {
         {userRanking && activeTab === 'global' && (
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-5">
-              <span className="text-xl">📊</span>
+              <BarChart3 className="w-5 h-5 text-gray-600" />
               <h3 className="text-base font-semibold text-gray-900">Your Performance</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -558,7 +569,7 @@ export default function RankingsContent() {
         {/* Info Footer */}
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm p-5">
           <div className="flex gap-3">
-            <div className="text-lg">💡</div>
+            <Lightbulb className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-semibold text-amber-900 mb-1">How Points Work</p>
               <p className="text-xs text-amber-800 leading-relaxed">
