@@ -2,13 +2,15 @@
   "name": "SmartCity Lab (SCL) Student Portal",
   "short_name": "SCL Portal", 
   "description": "Location-based attendance and student management system for SmartCity Lab",
-  "start_url": "/pwa",
+  "version": "1.0.0",
+  "start_url": "/pwa/login",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "https://i.ibb.co/YBfg1BR8/1000264552-removebg-preview-1.png",

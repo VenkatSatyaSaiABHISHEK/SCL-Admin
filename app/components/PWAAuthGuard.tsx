@@ -13,14 +13,50 @@ export default function PWAAuthGuard({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     // Use real Firebase Auth state — not localStorage
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       const isLoginPage = pathname === '/pwa/login';
 
       if (user) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        if (isLoginPage) {
-          router.push('/pwa/home');
+        // Check if user is a student (not admin)
+        try {
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          
+          // Check students collection
+          const studentDoc = await getDoc(doc(db, 'students', user.uid));
+          const isStudent = studentDoc.exists();
+          
+          // Check users collection for role
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const isAdmin = userDoc.exists() && userDoc.data()?.role === 'admin';
+          
+          if (isAdmin) {
+            // Admin trying to access PWA - logout and redirect to login
+            await auth.signOut();
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            router.push('/pwa/login');
+            return;
+          }
+          
+          if (isStudent) {
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            if (isLoginPage) {
+              router.push('/pwa/home');
+            }
+          } else {
+            // Not a valid student
+            await auth.signOut();
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            router.push('/pwa/login');
+          }
+        } catch (error) {
+          console.error('Error checking user role:', error);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          router.push('/pwa/login');
         }
       } else {
         setIsAuthenticated(false);
