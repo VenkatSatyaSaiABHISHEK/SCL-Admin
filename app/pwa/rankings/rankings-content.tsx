@@ -268,25 +268,25 @@ export default function RankingsContent() {
                         
                         if (entry.rank === 1) {
                           TrophyIcon = Trophy;
-                          iconColor = 'text-amber-500';
-                          bgColor = 'bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100';
-                          borderColor = 'border-amber-300';
-                          textColor = 'text-amber-900';
-                          rankBg = 'bg-amber-200';
+                          iconColor = 'text-yellow-500';
+                          bgColor = 'bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100';
+                          borderColor = 'border-yellow-400';
+                          textColor = 'text-yellow-900';
+                          rankBg = 'bg-yellow-400';
                         } else if (entry.rank === 2) {
                           TrophyIcon = Award;
-                          iconColor = 'text-slate-500';
-                          bgColor = 'bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100';
-                          borderColor = 'border-slate-300';
-                          textColor = 'text-slate-700';
-                          rankBg = 'bg-slate-200';
+                          iconColor = 'text-cyan-500';
+                          bgColor = 'bg-gradient-to-br from-cyan-50 via-blue-50 to-cyan-100';
+                          borderColor = 'border-cyan-400';
+                          textColor = 'text-cyan-900';
+                          rankBg = 'bg-cyan-400';
                         } else if (entry.rank === 3) {
                           TrophyIcon = Medal;
-                          iconColor = 'text-orange-600';
-                          bgColor = 'bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100';
-                          borderColor = 'border-orange-300';
-                          textColor = 'text-orange-800';
-                          rankBg = 'bg-orange-200';
+                          iconColor = 'text-rose-500';
+                          bgColor = 'bg-gradient-to-br from-rose-50 via-pink-50 to-rose-100';
+                          borderColor = 'border-rose-400';
+                          textColor = 'text-rose-900';
+                          rankBg = 'bg-rose-400';
                         }
 
                         return (
