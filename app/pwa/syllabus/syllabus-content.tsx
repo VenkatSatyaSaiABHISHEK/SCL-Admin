@@ -369,12 +369,11 @@ export default function SyllabusContent() {
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center p-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            {/* @ts-ignore */}
-            <dotlottie-wc 
+            <DotLottieReact 
               src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
-              style={{ width: '200px', height: '200px' }}
-              autoplay
               loop
+              autoplay
+              style={{ width: '200px', height: '200px' }}
             />
           </div>
           <p className="text-gray-600 font-medium">Loading syllabus...</p>
@@ -499,12 +498,11 @@ export default function SyllabusContent() {
       <div className="p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            {/* @ts-ignore */}
-            <dotlottie-wc 
-              src="https://lottie.host/2f11c23c-ea50-4e8e-83af-6a52c7eaf570/HCSWVzLOeK.lottie" 
-              style={{ width: '200px', height: '200px' }}
-              autoplay
+            <DotLottieReact 
+              src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
               loop
+              autoplay
+              style={{ width: '200px', height: '200px' }}
             />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Classes Found</h3>
