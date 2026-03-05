@@ -14,6 +14,7 @@ interface RankingData {
   bonusMarks: number;
   totalScore: number;
   rank: number;
+  photoURL?: string;
 }
 
 interface TeamData {
@@ -55,6 +56,17 @@ export default function RankingsContent() {
 
       // Load all rankings
       const rankingsSnapshot = await getDocs(collection(db, 'rankings'));
+      const allStudentsSnapshot = await getDocs(collection(db, 'students'));
+      
+      // Create a map of rollNo to photoURL
+      const studentPhotoMap: { [rollNo: string]: string } = {};
+      allStudentsSnapshot.forEach((doc) => {
+        const student = doc.data();
+        if (student.rollNo && (student.photoURL || student.photoUrl || student.avatar)) {
+          studentPhotoMap[student.rollNo] = student.photoURL || student.photoUrl || student.avatar;
+        }
+      });
+      
       const allRankings: RankingData[] = [];
       
       rankingsSnapshot.forEach((doc) => {
@@ -68,7 +80,8 @@ export default function RankingsContent() {
           taskMarks: data.taskMarks || {},
           bonusMarks: data.bonusMarks || 0,
           totalScore: data.totalScore || 0,
-          rank: data.rank || 0
+          rank: data.rank || 0,
+          photoURL: studentPhotoMap[data.rollNo || doc.id]
         });
       });
 
@@ -248,25 +261,25 @@ export default function RankingsContent() {
                         
                         if (entry.rank === 1) {
                           TrophyIcon = Trophy;
-                          iconColor = 'text-yellow-500';
-                          bgColor = 'bg-gradient-to-br from-yellow-50 to-orange-50';
-                          borderColor = 'border-yellow-200';
-                          textColor = 'text-yellow-900';
-                          rankBg = 'bg-yellow-100';
+                          iconColor = 'text-amber-500';
+                          bgColor = 'bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100';
+                          borderColor = 'border-amber-300';
+                          textColor = 'text-amber-900';
+                          rankBg = 'bg-amber-200';
                         } else if (entry.rank === 2) {
                           TrophyIcon = Award;
-                          iconColor = 'text-gray-400';
-                          bgColor = 'bg-gradient-to-br from-gray-50 to-slate-50';
-                          borderColor = 'border-gray-300';
-                          textColor = 'text-gray-700';
-                          rankBg = 'bg-gray-200';
+                          iconColor = 'text-slate-500';
+                          bgColor = 'bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100';
+                          borderColor = 'border-slate-300';
+                          textColor = 'text-slate-700';
+                          rankBg = 'bg-slate-200';
                         } else if (entry.rank === 3) {
                           TrophyIcon = Medal;
-                          iconColor = 'text-orange-500';
-                          bgColor = 'bg-gradient-to-br from-orange-50 to-amber-50';
-                          borderColor = 'border-orange-200';
+                          iconColor = 'text-orange-600';
+                          bgColor = 'bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100';
+                          borderColor = 'border-orange-300';
                           textColor = 'text-orange-800';
-                          rankBg = 'bg-orange-100';
+                          rankBg = 'bg-orange-200';
                         }
 
                         return (
@@ -297,36 +310,29 @@ export default function RankingsContent() {
                               </div>
                             </div>
 
-                            {/* Avatar */}
-                            <div className="flex justify-center mb-2">
-                              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-base font-bold shadow-md">
+                            {/* Avatar/Photo */}
+                            <div className="flex justify-center mb-3">
+                              {entry.photoURL ? (
+                                <img
+                                  src={entry.photoURL}
+                                  alt={entry.name}
+                                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white ${entry.photoURL ? 'hidden' : ''}`}>
                                 {entry.name.charAt(0).toUpperCase()}
                               </div>
                             </div>
 
-                            {/* Student Name - Fixed height with line clamp */}
-                            <div className="mb-2 h-10 flex items-center justify-center">
-                              <h3 className="text-center font-bold text-gray-900 text-xs leading-tight line-clamp-2 px-1" title={entry.name}>
+                            {/* Student Name - Larger and more visible */}
+                            <div className="mb-3 flex items-center justify-center">
+                              <h3 className="text-center font-bold text-gray-900 text-sm leading-tight line-clamp-3 px-2" title={entry.name}>
                                 {entry.name}
                               </h3>
-                            </div>
-
-                            {/* Performance Summary */}
-                            <div className="bg-white/70 rounded-lg p-2 mb-2 space-y-1">
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Attendance:</span>
-                                <span className="font-bold text-green-600">{entry.attendanceMarks}</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Tasks:</span>
-                                <span className="font-bold text-blue-600">
-                                  {Object.values(entry.taskMarks).reduce((sum, mark) => sum + mark, 0)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600">Bonus:</span>
-                                <span className="font-bold text-purple-600">{entry.bonusMarks}</span>
-                              </div>
                             </div>
 
                             {/* Total Points */}
