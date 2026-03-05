@@ -370,7 +370,7 @@ export default function SyllabusContent() {
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <DotLottieReact 
-              src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
+              src="https://lottie.host/cde1d251-86e5-44e7-b408-2d979fd814f5/LxfGzuYHNb.lottie" 
               loop
               autoplay
               style={{ width: '200px', height: '200px' }}
@@ -499,7 +499,7 @@ export default function SyllabusContent() {
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <DotLottieReact 
-              src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
+              src="https://lottie.host/cde1d251-86e5-44e7-b408-2d979fd814f5/LxfGzuYHNb.lottie" 
               loop
               autoplay
               style={{ width: '200px', height: '200px' }}
