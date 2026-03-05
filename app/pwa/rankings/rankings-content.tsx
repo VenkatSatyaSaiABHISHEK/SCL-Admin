@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Card from '@/app/components/pwa-ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -183,241 +182,298 @@ export default function RankingsContent() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading rankings...</p>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 animate-pulse"></div>
+          <p className="text-gray-600 font-medium">Loading rankings...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 pb-6">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Rankings</h1>
-        <p className="text-gray-600 text-sm mt-1">Leaderboard and performance</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50 pb-24">
+      <div className="px-4 pt-6 space-y-5">
+        {/* Page Header */}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Rankings</h1>
+          <p className="text-gray-600 text-sm mt-1">Leaderboard & Performance</p>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setActiveTab('global')}
-          className={`px-6 py-2 rounded-lg font-medium text-sm transition-all ${
-            activeTab === 'global'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-200'
-          }`}
-        >
-          Ranker
-        </button>
-        <button
-          onClick={() => setActiveTab('team')}
-          className={`px-6 py-2 rounded-lg font-medium text-sm transition-all ${
-            activeTab === 'team'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-200'
-          }`}
-        >
-          Your Team
-        </button>
-      </div>
+        {/* Tabs */}
+        <div className="flex gap-2 bg-white rounded-2xl p-1.5 shadow-sm">
+          <button
+            onClick={() => setActiveTab('global')}
+            className={`flex-1 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+              activeTab === 'global'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Top Rankers
+          </button>
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`flex-1 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+              activeTab === 'team'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Your Team
+          </button>
+        </div>
 
-      {/* Content */}
-      {activeTab === 'global' ? (
-        <>
-          {/* Top 3 Leaderboard Cards */}
-          {rankings.length > 0 && rankings.length <= 3 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {rankings.map((entry) => {
-                const medal = medalConfig[entry.rank] || { symbol: entry.rank.toString(), color: 'text-gray-600' };
+        {/* Content */}
+        {activeTab === 'global' ? (
+          <div className="space-y-3">
+            {rankings.length > 0 ? (
+              rankings.slice(0, 20).map((entry) => {
                 const isCurrentUser = entry.rollNo === userRanking?.rollNo;
-                return (
-                  <Card 
-                    key={entry.rank} 
-                    className={`text-center ${
-                      isCurrentUser 
-                        ? 'bg-gradient-to-b from-blue-100 to-blue-50 border-2 border-blue-300' 
-                        : 'bg-gradient-to-b from-blue-50 to-white'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${medal.color} bg-gray-100 mx-auto mb-3`}>
-                      {medal.symbol}
-                    </div>
-                    <p className={`font-semibold text-sm ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
-                      {isCurrentUser ? 'You' : entry.name}
-                    </p>
-                    <p className="text-blue-600 font-bold text-base mt-2">{entry.totalScore}</p>
-                    <p className="text-gray-500 text-xs mt-1">points</p>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                const isTop3 = entry.rank <= 3;
+                
+                // Rank circle styling
+                let rankCircleStyle = 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700';
+                if (entry.rank === 1) rankCircleStyle = 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-lg shadow-yellow-500/30';
+                if (entry.rank === 2) rankCircleStyle = 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-lg shadow-gray-400/30';
+                if (entry.rank === 3) rankCircleStyle = 'bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-500/30';
 
-          {rankings.length > 3 && (
-            <div className="grid grid-cols-3 gap-3">
-              {rankings.slice(0, 3).map((entry) => {
-                const medal = medalConfig[entry.rank];
-                const isCurrentUser = entry.rollNo === userRanking?.rollNo;
                 return (
-                  <Card 
-                    key={entry.rank} 
-                    className={`text-center ${
-                      isCurrentUser 
-                        ? 'bg-gradient-to-b from-blue-100 to-blue-50 border-2 border-blue-300' 
-                        : 'bg-gradient-to-b from-blue-50 to-white'
-                    }`}
+                  <div
+                    key={entry.rank}
+                    className={`
+                      relative overflow-hidden rounded-2xl p-4 transition-all duration-300 
+                      hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]
+                      ${isCurrentUser 
+                        ? 'bg-gradient-to-r from-blue-500/10 to-blue-400/10 border-2 border-blue-500 shadow-md shadow-blue-500/20' 
+                        : 'bg-white border border-gray-200 shadow-sm'
+                      }
+                      ${isTop3 ? 'shadow-md' : ''}
+                    `}
                   >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${medal.color} bg-gray-100 mx-auto mb-3`}>
-                      {medal.symbol}
-                    </div>
-                    <p className={`font-semibold text-sm break-words ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
-                      {isCurrentUser ? 'You' : entry.name}
-                    </p>
-                    <p className="text-blue-600 font-bold text-base mt-2">{entry.totalScore}</p>
-                    <p className="text-gray-500 text-xs mt-1">points</p>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                    {/* Current User Label */}
+                    {isCurrentUser && (
+                      <div className="absolute top-2 right-2">
+                        <span className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full shadow-sm">
+                          YOU
+                        </span>
+                      </div>
+                    )}
 
-          {/* Rest of Leaderboard */}
-          {rankings.length > 3 && (
-            <div className="space-y-2">
-              {rankings.slice(3, 20).map((entry) => {
-              const isCurrentUser = entry.rollNo === userRanking?.rollNo;
-              return (
-                <div
-                  key={entry.rank}
-                  className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
-                    isCurrentUser
-                      ? 'bg-blue-50 border-blue-200'
-                      : 'bg-white border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-sm flex-shrink-0 ${
-                      isCurrentUser ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {entry.rank}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className={`font-medium text-sm truncate ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
-                        {isCurrentUser ? 'You' : entry.name}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      {/* Rank Circle */}
+                      <div 
+                        className={`
+                          w-12 h-12 rounded-full flex items-center justify-center 
+                          font-bold text-lg flex-shrink-0 ${rankCircleStyle}
+                        `}
+                      >
+                        {entry.rank}
+                      </div>
+
+                      {/* Student Name */}
+                      <div className="flex-1 min-w-0">
+                        <p 
+                          className={`
+                            font-semibold text-base truncate
+                            ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}
+                          `}
+                          title={entry.name}
+                        >
+                          {entry.name}
+                        </p>
+                        {isTop3 && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {entry.rank === 1 && '🥇 Champion'}
+                            {entry.rank === 2 && '🥈 Runner Up'}
+                            {entry.rank === 3 && '🥉 Third Place'}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Points Badge */}
+                      <div 
+                        className={`
+                          px-4 py-2 rounded-xl font-bold text-sm flex-shrink-0
+                          ${isCurrentUser 
+                            ? 'bg-blue-600 text-white shadow-md' 
+                            : isTop3 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md' 
+                              : 'bg-gray-100 text-gray-700'
+                          }
+                        `}
+                      >
+                        {entry.totalScore} pts
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-2">
-                    <p className={`font-bold text-sm ${isCurrentUser ? 'text-blue-600' : 'text-gray-900'}`}>
-                      {entry.totalScore}
-                    </p>
+                );
+              })
+            ) : (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 text-center py-16">
+                <div className="text-5xl mb-4">🏆</div>
+                <p className="text-gray-600 font-medium">No rankings data available yet</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {teamMembers.length > 0 ? (
+              <>
+                {/* Team Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">👥</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{teamName}</h3>
+                      <p className="text-blue-100 text-sm">{teamMembers.length} Members</p>
+                    </div>
                   </div>
                 </div>
-              );
-            })}
-            </div>
-          )}
 
-          {rankings.length === 0 && (
-            <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 text-center py-12">
-              <p className="text-gray-600">No rankings data available yet</p>
-            </Card>
-          )}
-        </>
-      ) : (
-        <>
-          {/* Team Members Data */}
-          {teamMembers.length > 0 ? (
-            <>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                <h3 className="font-semibold text-blue-900 mb-1">{teamName}</h3>
-                <p className="text-blue-700 text-sm">Team Members: {teamMembers.length}</p>
-              </div>
+                {/* Team Members List */}
+                <div className="space-y-3">
+                  {teamMembers.map((member, index) => {
+                    const isCurrentUser = member.rollNo === userRanking?.rollNo;
+                    
+                    return (
+                      <div
+                        key={member.rollNo}
+                        className={`
+                          relative overflow-hidden rounded-2xl p-4 transition-all duration-300
+                          hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]
+                          ${isCurrentUser 
+                            ? 'bg-gradient-to-r from-blue-500/10 to-blue-400/10 border-2 border-blue-500 shadow-md shadow-blue-500/20' 
+                            : 'bg-white border border-gray-200 shadow-sm'
+                          }
+                        `}
+                      >
+                        {/* Leader & You Labels */}
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          {member.isLeader && (
+                            <span className="text-[10px] font-bold text-white bg-gradient-to-r from-blue-600 to-blue-500 px-2 py-0.5 rounded-full shadow-sm">
+                              LEADER
+                            </span>
+                          )}
+                          {isCurrentUser && (
+                            <span className="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full shadow-sm">
+                              YOU
+                            </span>
+                          )}
+                        </div>
 
-              <div className="space-y-3">
-                {teamMembers.map((member) => {
-                  const isCurrentUser = member.rollNo === userRanking?.rollNo;
-                  return (
-                    <Card 
-                      key={member.rollNo}
-                      className={isCurrentUser ? 'border-2 border-blue-300 bg-blue-50' : ''}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex-1 min-w-0 mr-3">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <p className={`font-semibold break-words ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
-                              {isCurrentUser ? `${member.name} (You)` : member.name}
-                            </p>
-                            {member.isLeader && (
-                              <span className="text-[10px] font-bold text-white bg-[#3B82F6] px-2 py-0.5 rounded flex-shrink-0">
-                                LEADER
-                              </span>
-                            )}
+                        {/* Member Info Row */}
+                        <div className="flex items-center gap-4 mb-4">
+                          {/* Rank Circle */}
+                          <div 
+                            className={`
+                              w-12 h-12 rounded-full flex items-center justify-center 
+                              font-bold text-lg flex-shrink-0
+                              ${index === 0 
+                                ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-md' 
+                                : index === 1 
+                                  ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white shadow-md' 
+                                  : 'bg-gray-100 text-gray-700'
+                              }
+                            `}
+                          >
+                            {index + 1}
                           </div>
-                          <p className="text-gray-500 text-xs font-mono truncate">{member.rollNo}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className={`text-2xl font-bold ${isCurrentUser ? 'text-blue-600' : 'text-gray-900'}`}>
-                            {member.totalScore}
-                          </p>
-                          <p className="text-gray-500 text-xs">total points</p>
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200">
-                        <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Attendance</p>
-                          <p className="text-green-600 font-bold text-sm">{member.attendanceMarks}</p>
+                          {/* Name */}
+                          <div className="flex-1 min-w-0">
+                            <p 
+                              className={`
+                                font-semibold text-base truncate
+                                ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}
+                              `}
+                              title={member.name}
+                            >
+                              {member.name}
+                            </p>
+                            <p className="text-xs text-gray-500 font-mono truncate">{member.rollNo}</p>
+                          </div>
+
+                          {/* Total Points Badge */}
+                          <div 
+                            className={`
+                              px-4 py-2 rounded-xl font-bold text-sm flex-shrink-0
+                              ${isCurrentUser 
+                                ? 'bg-blue-600 text-white shadow-md' 
+                                : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                              }
+                            `}
+                          >
+                            {member.totalScore} pts
+                          </div>
                         </div>
-                        <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Tasks</p>
-                          <p className="text-blue-600 font-bold text-sm">{member.taskScore}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-gray-600 text-xs mb-1">Bonus</p>
-                          <p className="text-purple-600 font-bold text-sm">{member.bonusMarks}</p>
+
+                        {/* Score Breakdown */}
+                        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-200">
+                          <div className="text-center bg-green-50 rounded-lg py-2">
+                            <p className="text-green-700 text-xs font-medium mb-1">Attendance</p>
+                            <p className="text-green-600 font-bold text-base">{member.attendanceMarks}</p>
+                          </div>
+                          <div className="text-center bg-blue-50 rounded-lg py-2">
+                            <p className="text-blue-700 text-xs font-medium mb-1">Tasks</p>
+                            <p className="text-blue-600 font-bold text-base">{member.taskScore}</p>
+                          </div>
+                          <div className="text-center bg-purple-50 rounded-lg py-2">
+                            <p className="text-purple-700 text-xs font-medium mb-1">Bonus</p>
+                            <p className="text-purple-600 font-bold text-base">{member.bonusMarks}</p>
+                          </div>
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 text-center py-16">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="font-bold text-gray-900 text-lg mb-2">No Team Assigned</h3>
+                <p className="text-gray-600 text-sm px-6">
+                  You haven't been assigned to a team yet. Contact your administrator.
+                </p>
               </div>
-            </>
-          ) : (
-            <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 text-center py-12">
-              <div className="text-5xl mb-4">👥</div>
-              <h3 className="font-semibold text-gray-900 mb-2">No Team Assigned</h3>
-              <p className="text-gray-600 text-sm">
-                You haven't been assigned to a team yet. Contact your administrator.
-              </p>
-            </Card>
-          )}
-        </>
-      )}
+            )}
+          </div>
+        )}
 
-      {/* Stats Overview */}
-      {userRanking && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h3 className="font-semibold text-gray-900">Your Ranking Stats</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <p className="text-gray-600 text-xs font-medium mb-2">Current Rank</p>
-              <p className="text-3xl font-bold text-blue-600">#{userRanking.rank}</p>
+        {/* User Stats Card */}
+        {userRanking && activeTab === 'global' && (
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📊</span>
+              <h3 className="font-bold text-gray-900">Your Stats</h3>
             </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <p className="text-gray-600 text-xs font-medium mb-2">Total Points</p>
-              <p className="text-3xl font-bold text-green-600">{userRanking.totalScore}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-center shadow-lg">
+                <p className="text-blue-100 text-xs font-semibold mb-2">Current Rank</p>
+                <p className="text-3xl font-bold text-white">#{userRanking.rank}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-center shadow-lg">
+                <p className="text-green-100 text-xs font-semibold mb-2">Total Points</p>
+                <p className="text-3xl font-bold text-white">{userRanking.totalScore}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Info Footer */}
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+          <div className="flex gap-3">
+            <div className="text-2xl">💡</div>
+            <div>
+              <p className="font-bold text-amber-900 text-sm mb-1">How Points Work</p>
+              <p className="text-amber-800 text-xs leading-relaxed">
+                Total Score = Attendance + Task Marks + Bonus Marks. Rankings are updated by your instructor.
+              </p>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Info */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p className="font-semibold text-amber-900 text-sm mb-2">How Points Work</p>
-        <p className="text-amber-800 text-xs">
-          Total Score = Attendance Marks + Task Marks + Bonus Marks. Rankings are updated by your instructor.
-        </p>
       </div>
     </div>
   );
