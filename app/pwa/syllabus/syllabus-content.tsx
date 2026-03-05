@@ -371,8 +371,8 @@ export default function SyllabusContent() {
           <div className="flex justify-center mb-4">
             {/* @ts-ignore */}
             <dotlottie-wc 
-              src="https://lottie.host/2f11c23c-ea50-4e8e-83af-6a52c7eaf570/HCSWVzLOeK.lottie" 
-              style={{ width: '300px', height: '300px' }}
+              src="https://lottie.host/7f9084e3-3e6a-4cf1-901f-9e93b793cca0/YidrY6sp14.lottie" 
+              style={{ width: '200px', height: '200px' }}
               autoplay
               loop
             />
