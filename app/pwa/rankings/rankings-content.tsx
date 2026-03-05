@@ -270,7 +270,7 @@ export default function RankingsContent() {
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${medal.color} bg-gray-100 mx-auto mb-3`}>
                       {medal.symbol}
                     </div>
-                    <p className={`font-semibold text-sm ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
+                    <p className={`font-semibold text-sm break-words ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
                       {isCurrentUser ? 'You' : entry.name}
                     </p>
                     <p className="text-blue-600 font-bold text-base mt-2">{entry.totalScore}</p>
@@ -301,8 +301,8 @@ export default function RankingsContent() {
                     }`}>
                       {entry.rank}
                     </div>
-                    <div className="min-w-0">
-                      <p className={`font-medium text-sm ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-medium text-sm truncate ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
                         {isCurrentUser ? 'You' : entry.name}
                       </p>
                     </div>
@@ -343,20 +343,20 @@ export default function RankingsContent() {
                       className={isCurrentUser ? 'border-2 border-blue-300 bg-blue-50' : ''}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className={`font-semibold ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
+                        <div className="flex-1 min-w-0 mr-3">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <p className={`font-semibold break-words ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
                               {isCurrentUser ? `${member.name} (You)` : member.name}
                             </p>
                             {member.isLeader && (
-                              <span className="text-[10px] font-bold text-white bg-[#3B82F6] px-2 py-0.5 rounded">
+                              <span className="text-[10px] font-bold text-white bg-[#3B82F6] px-2 py-0.5 rounded flex-shrink-0">
                                 LEADER
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-500 text-xs font-mono">{member.rollNo}</p>
+                          <p className="text-gray-500 text-xs font-mono truncate">{member.rollNo}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           <p className={`text-2xl font-bold ${isCurrentUser ? 'text-blue-600' : 'text-gray-900'}`}>
                             {member.totalScore}
                           </p>
