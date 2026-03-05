@@ -244,89 +244,93 @@ export default function RankingsContent() {
                         let bgColor = 'bg-white';
                         let borderColor = 'border-gray-200';
                         let textColor = 'text-gray-900';
+                        let rankBg = 'bg-gray-100';
                         
                         if (entry.rank === 1) {
                           TrophyIcon = Trophy;
                           iconColor = 'text-yellow-500';
                           bgColor = 'bg-gradient-to-br from-yellow-50 to-orange-50';
                           borderColor = 'border-yellow-200';
-                          textColor = 'text-yellow-800';
+                          textColor = 'text-yellow-900';
+                          rankBg = 'bg-yellow-100';
                         } else if (entry.rank === 2) {
                           TrophyIcon = Award;
                           iconColor = 'text-gray-400';
                           bgColor = 'bg-gradient-to-br from-gray-50 to-slate-50';
                           borderColor = 'border-gray-300';
                           textColor = 'text-gray-700';
+                          rankBg = 'bg-gray-200';
                         } else if (entry.rank === 3) {
                           TrophyIcon = Medal;
                           iconColor = 'text-orange-500';
                           bgColor = 'bg-gradient-to-br from-orange-50 to-amber-50';
                           borderColor = 'border-orange-200';
-                          textColor = 'text-orange-700';
+                          textColor = 'text-orange-800';
+                          rankBg = 'bg-orange-100';
                         }
 
                         return (
                           <div
                             key={entry.rank}
                             className={`
-                              relative ${bgColor} border ${borderColor} rounded-2xl p-6 shadow-md
-                              transition-transform hover:scale-105
-                              ${isCurrentUser ? 'ring-2 ring-blue-500' : ''}
+                              relative ${bgColor} border-2 ${borderColor} rounded-2xl p-5 shadow-lg
+                              transition-all hover:shadow-xl hover:-translate-y-1
+                              ${isCurrentUser ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
                             `}
                           >
                             {/* YOU Label */}
                             {isCurrentUser && (
-                              <div className="absolute top-3 right-3">
-                                <span className="text-[9px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">
+                              <div className="absolute -top-2 -right-2">
+                                <span className="text-[10px] font-bold text-white bg-blue-600 px-2.5 py-1 rounded-full shadow-md">
                                   YOU
                                 </span>
                               </div>
                             )}
 
-                            {/* Trophy Icon */}
-                            <div className="text-center mb-4">
+                            {/* Trophy Icon & Rank */}
+                            <div className="text-center mb-3">
                               <div className="flex justify-center mb-2">
-                                <TrophyIcon className={`w-12 h-12 ${iconColor}`} strokeWidth={2.5} />
+                                <TrophyIcon className={`w-10 h-10 ${iconColor}`} strokeWidth={2.5} />
                               </div>
-                              <div className={`text-2xl font-bold ${textColor}`}>
+                              <div className={`inline-block ${rankBg} ${textColor} text-xl font-bold px-3 py-1 rounded-lg`}>
                                 #{entry.rank}
                               </div>
                             </div>
 
-                            {/* Avatar Placeholder */}
-                            <div className="flex justify-center mb-4">
-                              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                            {/* Avatar */}
+                            <div className="flex justify-center mb-3">
+                              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-md">
                                 {entry.name.charAt(0).toUpperCase()}
                               </div>
                             </div>
 
-                            {/* Student Name */}
-                            <h3 className="text-center font-semibold text-gray-900 mb-3 truncate" title={entry.name}>
+                            {/* Student Name - Multi-line with word wrap */}
+                            <h3 className="text-center font-bold text-gray-900 mb-3 text-sm leading-tight min-h-[2.5rem] px-1" title={entry.name}>
                               {entry.name}
                             </h3>
 
                             {/* Performance Summary */}
-                            <div className="bg-white/60 rounded-lg p-3 mb-4 space-y-1.5">
+                            <div className="bg-white/70 rounded-lg p-2.5 mb-3 space-y-1">
                               <div className="flex justify-between text-xs">
                                 <span className="text-gray-600">Attendance:</span>
-                                <span className="font-semibold text-green-600">{entry.attendanceMarks}</span>
+                                <span className="font-bold text-green-600">{entry.attendanceMarks}</span>
                               </div>
                               <div className="flex justify-between text-xs">
                                 <span className="text-gray-600">Tasks:</span>
-                                <span className="font-semibold text-blue-600">
+                                <span className="font-bold text-blue-600">
                                   {Object.values(entry.taskMarks).reduce((sum, mark) => sum + mark, 0)}
                                 </span>
                               </div>
                               <div className="flex justify-between text-xs">
                                 <span className="text-gray-600">Bonus:</span>
-                                <span className="font-semibold text-purple-600">{entry.bonusMarks}</span>
+                                <span className="font-bold text-purple-600">{entry.bonusMarks}</span>
                               </div>
                             </div>
 
                             {/* Total Points */}
                             <div className="text-center">
-                              <div className="inline-flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-md">
-                                <span className="text-lg">{entry.totalScore}</span>
+                              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white px-5 py-2 rounded-full font-bold shadow-lg">
+                                <span className="text-base">{entry.totalScore}</span>
                                 <span className="text-xs">pts</span>
                               </div>
                             </div>
