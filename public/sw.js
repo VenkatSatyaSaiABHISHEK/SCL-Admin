@@ -1,10 +1,10 @@
 // Service Worker for SmartCity Lab PWA
 // Handles background sync, push notifications, and caching
 
-const CACHE_NAME = 'scl-pwa-v3'; // Increment version to force cache refresh
+const CACHE_NAME = 'scl-pwa-v4'; // Increment version to force cache refresh
 const urlsToCache = [
   '/',
-  '/pwa',
+  '/pwa/login',
   '/pwa/attendance',
   '/pwa/home',
   '/pwa/profile',
