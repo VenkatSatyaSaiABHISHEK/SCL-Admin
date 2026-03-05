@@ -18,11 +18,12 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [toastCounter, setToastCounter] = useState(0);
 
   const showToast = (message: string, type: 'success' | 'error', duration = 4000) => {
-    const id = `${Date.now()}-${toastCounter}`;
-    setToastCounter(prev => prev + 1);
+    // Generate unique ID using crypto.randomUUID or timestamp + random
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const newToast: ToastMessage = { id, message, type, duration };
     
