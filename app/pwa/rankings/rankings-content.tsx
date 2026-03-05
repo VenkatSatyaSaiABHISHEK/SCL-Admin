@@ -182,9 +182,9 @@ export default function RankingsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin mx-auto mb-3"></div>
+          <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-sm text-gray-600">Loading rankings...</p>
         </div>
       </div>
@@ -192,8 +192,8 @@ export default function RankingsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      <div className="max-w-3xl mx-auto px-4 pt-8 space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
+      <div className="max-w-5xl mx-auto px-4 pt-8 space-y-8">
         {/* Header */}
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-gray-900">Rankings</h1>
@@ -201,12 +201,12 @@ export default function RankingsContent() {
         </div>
 
         {/* Tabs */}
-        <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
+        <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-white shadow-sm">
           <button
             onClick={() => setActiveTab('global')}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
               activeTab === 'global'
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -216,7 +216,7 @@ export default function RankingsContent() {
             onClick={() => setActiveTab('team')}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
               activeTab === 'team'
-                ? 'bg-white text-gray-900 shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -226,91 +226,207 @@ export default function RankingsContent() {
 
         {/* Content */}
         {activeTab === 'global' ? (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="space-y-8">
             {rankings.length > 0 ? (
-              <div className="divide-y divide-gray-100">
-                {rankings.slice(0, 20).map((entry) => {
-                  const isCurrentUser = entry.rollNo === userRanking?.rollNo;
-                  
-                  // Rank styling
-                  let rankColor = 'text-gray-500';
-                  if (entry.rank === 1) rankColor = 'text-yellow-600 font-bold';
-                  if (entry.rank === 2) rankColor = 'text-gray-400 font-bold';
-                  if (entry.rank === 3) rankColor = 'text-orange-500 font-bold';
-
-                  return (
-                    <div
-                      key={entry.rank}
-                      className={`
-                        relative flex items-center gap-4 px-4 py-3.5 transition-colors
-                        hover:bg-gray-50
-                        ${isCurrentUser ? 'bg-blue-50/50 border-l-2 border-blue-500' : ''}
-                      `}
-                    >
-                      {/* Current User Label */}
-                      {isCurrentUser && (
-                        <div className="absolute top-2 right-3">
-                          <span className="text-[9px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
-                            YOU
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Rank */}
-                      <div className={`w-8 text-center font-semibold ${rankColor}`}>
-                        {entry.rank}
-                      </div>
-
-                      {/* Student Name */}
-                      <div className="flex-1 min-w-0">
-                        <p 
-                          className={`text-sm font-medium truncate ${
-                            isCurrentUser ? 'text-blue-900' : 'text-gray-900'
-                          }`}
-                          title={entry.name}
-                        >
-                          {entry.name}
-                        </p>
-                      </div>
-
-                      {/* Points Badge */}
-                      <div className={`
-                        text-sm font-semibold px-2.5 py-1 rounded-md
-                        ${isCurrentUser 
-                          ? 'text-blue-700 bg-blue-100' 
-                          : 'text-gray-700 bg-gray-100'
+              <>
+                {/* TOP 3 HIGHLIGHT SECTION */}
+                {rankings.length >= 1 && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Performers</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {rankings.slice(0, 3).map((entry) => {
+                        const isCurrentUser = entry.rollNo === userRanking?.rollNo;
+                        
+                        // Trophy and color styling
+                        let trophy = '';
+                        let bgColor = 'bg-white';
+                        let borderColor = 'border-gray-200';
+                        let textColor = 'text-gray-900';
+                        
+                        if (entry.rank === 1) {
+                          trophy = '🥇';
+                          bgColor = 'bg-gradient-to-br from-yellow-50 to-orange-50';
+                          borderColor = 'border-yellow-200';
+                          textColor = 'text-yellow-800';
+                        } else if (entry.rank === 2) {
+                          trophy = '🥈';
+                          bgColor = 'bg-gradient-to-br from-gray-50 to-slate-50';
+                          borderColor = 'border-gray-300';
+                          textColor = 'text-gray-700';
+                        } else if (entry.rank === 3) {
+                          trophy = '🥉';
+                          bgColor = 'bg-gradient-to-br from-orange-50 to-amber-50';
+                          borderColor = 'border-orange-200';
+                          textColor = 'text-orange-700';
                         }
-                      `}>
-                        {entry.totalScore} pts
+
+                        return (
+                          <div
+                            key={entry.rank}
+                            className={`
+                              relative ${bgColor} border ${borderColor} rounded-2xl p-6 shadow-md
+                              transition-transform hover:scale-105
+                              ${isCurrentUser ? 'ring-2 ring-blue-500' : ''}
+                            `}
+                          >
+                            {/* YOU Label */}
+                            {isCurrentUser && (
+                              <div className="absolute top-3 right-3">
+                                <span className="text-[9px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">
+                                  YOU
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Trophy */}
+                            <div className="text-center mb-4">
+                              <div className="text-5xl mb-2">{trophy}</div>
+                              <div className={`text-2xl font-bold ${textColor}`}>
+                                #{entry.rank}
+                              </div>
+                            </div>
+
+                            {/* Avatar Placeholder */}
+                            <div className="flex justify-center mb-4">
+                              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                                {entry.name.charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+
+                            {/* Student Name */}
+                            <h3 className="text-center font-semibold text-gray-900 mb-3 truncate" title={entry.name}>
+                              {entry.name}
+                            </h3>
+
+                            {/* Performance Summary */}
+                            <div className="bg-white/60 rounded-lg p-3 mb-4 space-y-1.5">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-600">Attendance:</span>
+                                <span className="font-semibold text-green-600">{entry.attendanceMarks}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-600">Tasks:</span>
+                                <span className="font-semibold text-blue-600">
+                                  {Object.values(entry.taskMarks).reduce((sum, mark) => sum + mark, 0)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-600">Bonus:</span>
+                                <span className="font-semibold text-purple-600">{entry.bonusMarks}</span>
+                              </div>
+                            </div>
+
+                            {/* Total Points */}
+                            <div className="text-center">
+                              <div className="inline-flex items-center gap-1 bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-md">
+                                <span className="text-lg">{entry.totalScore}</span>
+                                <span className="text-xs">pts</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* LEADERBOARD TABLE */}
+                {rankings.length > 3 && (
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Complete Leaderboard</h2>
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                      <div className="divide-y divide-gray-100">
+                        {rankings.slice(3, 20).map((entry) => {
+                          const isCurrentUser = entry.rollNo === userRanking?.rollNo;
+
+                          return (
+                            <div
+                              key={entry.rank}
+                              className={`
+                                relative flex items-center gap-4 px-5 py-4 transition-colors
+                                hover:bg-gray-50
+                                ${isCurrentUser ? 'bg-blue-50/70 border-l-4 border-blue-600' : ''}
+                              `}
+                            >
+                              {/* YOU Label */}
+                              {isCurrentUser && (
+                                <div className="absolute top-2 right-4">
+                                  <span className="text-[9px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                                    YOU
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Rank */}
+                              <div className="w-10 text-center">
+                                <span className="text-base font-bold text-gray-700">
+                                  {entry.rank}
+                                </span>
+                              </div>
+
+                              {/* Avatar */}
+                              <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow">
+                                  {entry.name.charAt(0).toUpperCase()}
+                                </div>
+                              </div>
+
+                              {/* Student Name */}
+                              <div className="flex-1 min-w-0">
+                                <p 
+                                  className={`text-sm font-medium truncate ${
+                                    isCurrentUser ? 'text-blue-900' : 'text-gray-900'
+                                  }`}
+                                  title={entry.name}
+                                >
+                                  {entry.name}
+                                </p>
+                              </div>
+
+                              {/* Points Badge */}
+                              <div className={`
+                                text-sm font-semibold px-3 py-1.5 rounded-lg
+                                ${isCurrentUser 
+                                  ? 'text-blue-700 bg-blue-100 border border-blue-200' 
+                                  : 'text-gray-700 bg-gray-100 border border-gray-200'
+                                }
+                              `}>
+                                {entry.totalScore} pts
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-center py-16">
-                <div className="text-4xl mb-3">🏆</div>
+              <div className="bg-white border border-gray-200 rounded-xl text-center py-16 shadow-sm">
+                <div className="text-5xl mb-3">🏆</div>
                 <p className="text-sm text-gray-500">No rankings data available yet</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {teamMembers.length > 0 ? (
               <>
                 {/* Team Header */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">👥</span>
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md px-5 py-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">👥</span>
+                    </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-900">{teamName}</h3>
-                      <p className="text-xs text-gray-600">{teamMembers.length} Members</p>
+                      <h3 className="text-base font-bold">{teamName}</h3>
+                      <p className="text-sm text-blue-100">{teamMembers.length} Members</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Team Members List */}
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                   <div className="divide-y divide-gray-100">
                     {teamMembers.map((member, index) => {
                       const isCurrentUser = member.rollNo === userRanking?.rollNo;
@@ -319,19 +435,19 @@ export default function RankingsContent() {
                         <div
                           key={member.rollNo}
                           className={`
-                            relative px-4 py-4 transition-colors hover:bg-gray-50
-                            ${isCurrentUser ? 'bg-blue-50/50 border-l-2 border-blue-500' : ''}
+                            relative px-5 py-4 transition-colors hover:bg-gray-50
+                            ${isCurrentUser ? 'bg-blue-50/70 border-l-4 border-blue-600' : ''}
                           `}
                         >
                           {/* Labels */}
-                          <div className="absolute top-2 right-3 flex gap-1">
+                          <div className="absolute top-2 right-4 flex gap-1">
                             {member.isLeader && (
-                              <span className="text-[9px] font-semibold text-gray-700 bg-gray-200 px-1.5 py-0.5 rounded">
+                              <span className="text-[9px] font-bold text-white bg-gradient-to-r from-blue-600 to-blue-500 px-2 py-0.5 rounded-full">
                                 LEADER
                               </span>
                             )}
                             {isCurrentUser && (
-                              <span className="text-[9px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[9px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
                                 YOU
                               </span>
                             )}
@@ -340,11 +456,25 @@ export default function RankingsContent() {
                           {/* Member Row */}
                           <div className="flex items-center gap-4 mb-3">
                             {/* Position */}
-                            <div className={`
-                              w-8 text-center font-semibold text-sm
-                              ${index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-400' : 'text-gray-500'}
-                            `}>
-                              {index + 1}
+                            <div className="w-10 text-center">
+                              <span className={`text-base font-bold ${
+                                index === 0 ? 'text-yellow-600' : 
+                                index === 1 ? 'text-gray-400' : 
+                                'text-gray-700'
+                              }`}>
+                                {index + 1}
+                              </span>
+                            </div>
+
+                            {/* Avatar */}
+                            <div className="flex-shrink-0">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow ${
+                                index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                                index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                                'bg-gradient-to-br from-blue-400 to-blue-600'
+                              }`}>
+                                {member.name.charAt(0).toUpperCase()}
+                              </div>
                             </div>
 
                             {/* Name */}
@@ -362,10 +492,10 @@ export default function RankingsContent() {
 
                             {/* Total Points */}
                             <div className={`
-                              text-sm font-semibold px-2.5 py-1 rounded-md
+                              text-sm font-semibold px-3 py-1.5 rounded-lg
                               ${isCurrentUser 
-                                ? 'text-blue-700 bg-blue-100' 
-                                : 'text-gray-700 bg-gray-100'
+                                ? 'text-blue-700 bg-blue-100 border border-blue-200' 
+                                : 'text-gray-700 bg-gray-100 border border-gray-200'
                               }
                             `}>
                               {member.totalScore} pts
@@ -373,7 +503,7 @@ export default function RankingsContent() {
                           </div>
 
                           {/* Score Breakdown */}
-                          <div className="flex gap-4 text-xs text-gray-600 ml-12">
+                          <div className="flex gap-4 text-xs text-gray-600 ml-14">
                             <div>
                               <span className="text-gray-500">Attendance:</span>{' '}
                               <span className="font-semibold text-green-600">{member.attendanceMarks}</span>
@@ -394,9 +524,9 @@ export default function RankingsContent() {
                 </div>
               </>
             ) : (
-              <div className="bg-white border border-gray-200 rounded-lg text-center py-16">
-                <div className="text-5xl mb-3">👥</div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">No Team Assigned</h3>
+              <div className="bg-white border border-gray-200 rounded-xl text-center py-16 shadow-sm">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">No Team Assigned</h3>
                 <p className="text-sm text-gray-500">
                   You haven't been assigned to a team yet. Contact your administrator.
                 </p>
@@ -407,26 +537,26 @@ export default function RankingsContent() {
 
         {/* User Stats Card */}
         {userRanking && activeTab === 'global' && (
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-base">📊</span>
-              <h3 className="text-sm font-semibold text-gray-900">Your Stats</h3>
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-xl">📊</span>
+              <h3 className="text-base font-semibold text-gray-900">Your Performance</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <p className="text-xs text-gray-600 mb-1">Current Rank</p>
-                <p className="text-2xl font-bold text-gray-900">#{userRanking.rank}</p>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center border border-blue-200">
+                <p className="text-xs font-medium text-blue-700 mb-2">Current Rank</p>
+                <p className="text-3xl font-bold text-blue-900">#{userRanking.rank}</p>
               </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-600 mb-1">Total Points</p>
-                <p className="text-2xl font-bold text-gray-900">{userRanking.totalScore}</p>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center border border-green-200">
+                <p className="text-xs font-medium text-green-700 mb-2">Total Points</p>
+                <p className="text-3xl font-bold text-green-900">{userRanking.totalScore}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Info Footer */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm p-5">
           <div className="flex gap-3">
             <div className="text-lg">💡</div>
             <div>
