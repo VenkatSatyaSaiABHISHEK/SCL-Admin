@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Home, MapPin, BookOpen, Trophy, User } from 'lucide-react';
+import { Home, MapPin, BookOpen, Trophy, User, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 // Dynamic import for DotLottieReact (client-side only)
@@ -53,13 +53,22 @@ export default function PWALayout({ children }: PWALayoutProps) {
                 </h1>
               </div>
             </div>
-            {/* Profile Button */}
-            <button
-              onClick={() => router.push('/pwa/profile')}
-              className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-100 transition-all hover:scale-105 flex-shrink-0"
-            >
-              <User className="w-[18px] h-[18px] text-indigo-600" />
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Help Button */}
+              <button
+                onClick={() => router.push('/pwa/help')}
+                className="w-9 h-9 bg-purple-50 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-100 transition-all hover:scale-105"
+              >
+                <HelpCircle className="w-[18px] h-[18px] text-purple-600" />
+              </button>
+              {/* Profile Button */}
+              <button
+                onClick={() => router.push('/pwa/profile')}
+                className="w-9 h-9 bg-indigo-50 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-100 transition-all hover:scale-105"
+              >
+                <User className="w-[18px] h-[18px] text-indigo-600" />
+              </button>
+            </div>
           </div>
         </header>
       )}

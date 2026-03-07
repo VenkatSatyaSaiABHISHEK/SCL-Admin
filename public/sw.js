@@ -1,30 +1,28 @@
 // Service Worker for SmartCity Lab PWA
 // Handles background sync, push notifications, and caching
 
-const CACHE_NAME = 'scl-pwa-v4'; // Increment version to force cache refresh
-const urlsToCache = [
-  '/',
-  '/pwa/login',
-  '/pwa/attendance',
-  '/pwa/home',
-  '/pwa/profile',
+const CACHE_NAME = 'scl-pwa-v5'; // Increment version to force cache refresh
+const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-144x144.svg'
 ];
 
-// Install event - cache important resources
+// Install event - only cache static assets, NOT HTML pages
 self.addEventListener('install', (event) => {
+  console.log('SW: Installing new version');
+  self.skipWaiting(); // Activate immediately without waiting
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(STATIC_ASSETS);
       })
   );
 });
 
-// Activate event - cleanup old caches
+// Activate event - cleanup old caches and take control
 self.addEventListener('activate', (event) => {
+  console.log('SW: Activating new version');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -39,19 +37,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache when offline
+// Fetch event - smart caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Network-first strategy for Next.js chunks to prevent ChunkLoadError
-  if (url.pathname.includes('/_next/static/chunks/') || 
-      url.pathname.includes('/_next/static/css/') ||
-      url.pathname.includes('/_next/static/media/')) {
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip cross-origin requests (Firebase, external APIs, etc.)
+  if (url.origin !== self.location.origin) return;
+
+  // NETWORK-FIRST for HTML navigation requests (pages)
+  // This prevents stale cached pages from causing login loops and errors
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone and cache the fresh response
+          // Cache the fresh page for offline fallback
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseClone);
@@ -59,31 +62,72 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Fallback to cache if offline
+          // Offline fallback - serve cached version
+          return caches.match(request).then((cached) => {
+            return cached || new Response('You are offline. Please check your internet connection.', {
+              status: 503,
+              headers: { 'Content-Type': 'text/html' }
+            });
+          });
+        })
+    );
+    return;
+  }
+
+  // NETWORK-FIRST for Next.js chunks to prevent ChunkLoadError
+  if (url.pathname.includes('/_next/static/chunks/') || 
+      url.pathname.includes('/_next/static/css/') ||
+      url.pathname.includes('/_next/static/media/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
           return caches.match(request);
         })
     );
     return;
   }
 
-  // Cache-first strategy for static assets and pages
+  // CACHE-FIRST for truly static assets (icons, manifest, images)
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|ico|webp|woff|woff2|ttf)$/) || 
+      url.pathname === '/manifest.json') {
+    event.respondWith(
+      caches.match(request)
+        .then((response) => {
+          if (response) return response;
+          return fetch(request).then((response) => {
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return response;
+          });
+        })
+    );
+    return;
+  }
+
+  // Default: network-first for everything else
   event.respondWith(
-    caches.match(request)
+    fetch(request)
       .then((response) => {
-        if (response) {
-          return response;
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
         }
-        return fetch(request).then((response) => {
-          // Cache new requests
-          if (request.method === 'GET' && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        });
+        return response;
       })
+      .catch(() => caches.match(request))
   );
 });
 

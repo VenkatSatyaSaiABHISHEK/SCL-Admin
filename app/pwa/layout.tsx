@@ -2,6 +2,7 @@
 
 import PWALayout from '@/app/components/pwa-ui/PWALayout';
 import PWAAuthGuard from '@/app/components/PWAAuthGuard';
+import PWAErrorBoundary from '@/app/components/PWAErrorBoundary';
 import ServiceWorkerProvider from '@/components/ServiceWorkerProvider';
 
 export default function PwaLayout({
@@ -10,9 +11,11 @@ export default function PwaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <PWAAuthGuard>
-      <ServiceWorkerProvider />
-      <PWALayout>{children}</PWALayout>
-    </PWAAuthGuard>
+    <PWAErrorBoundary>
+      <PWAAuthGuard>
+        <ServiceWorkerProvider />
+        <PWALayout>{children}</PWALayout>
+      </PWAAuthGuard>
+    </PWAErrorBoundary>
   );
 }

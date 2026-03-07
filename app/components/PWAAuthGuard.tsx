@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export default function PWAAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,16 +13,12 @@ export default function PWAAuthGuard({ children }: { children: React.ReactNode }
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Use real Firebase Auth state — not localStorage
+    // Give Firebase auth time to restore persistence before checking
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       const isLoginPage = pathname === '/pwa/login';
 
       if (user) {
-        // Check if user is a student (not admin)
         try {
-          const { doc, getDoc } = await import('firebase/firestore');
-          const { db } = await import('@/lib/firebase');
-          
           // Check students collection
           const studentDoc = await getDoc(doc(db, 'students', user.uid));
           const isStudent = studentDoc.exists();
@@ -31,11 +28,10 @@ export default function PWAAuthGuard({ children }: { children: React.ReactNode }
           const isAdmin = userDoc.exists() && userDoc.data()?.role === 'admin';
           
           if (isAdmin) {
-            // Admin trying to access PWA - logout and redirect to login
             await auth.signOut();
             setIsAuthenticated(false);
             setIsLoading(false);
-            router.push('/pwa/login');
+            if (!isLoginPage) router.push('/pwa/login');
             return;
           }
           
@@ -46,17 +42,17 @@ export default function PWAAuthGuard({ children }: { children: React.ReactNode }
               router.push('/pwa/home');
             }
           } else {
-            // Not a valid student
             await auth.signOut();
             setIsAuthenticated(false);
             setIsLoading(false);
-            router.push('/pwa/login');
+            if (!isLoginPage) router.push('/pwa/login');
           }
         } catch (error) {
           console.error('Error checking user role:', error);
+          // Don't sign out on network errors - keep trying
           setIsAuthenticated(false);
           setIsLoading(false);
-          router.push('/pwa/login');
+          if (!isLoginPage) router.push('/pwa/login');
         }
       } else {
         setIsAuthenticated(false);
